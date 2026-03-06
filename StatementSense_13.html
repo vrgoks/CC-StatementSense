@@ -1,0 +1,3486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StatementSense — CC Statement Analyser</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --ink: #0f1117;
+    --ink-soft: #3a3d4a;
+    --ink-muted: #7a7f96;
+    --surface: #f8f7f4;
+    --surface-2: #eeecea;
+    --surface-3: #e4e2de;
+    --accent: #e8562a;
+    --accent-soft: #fdf0ec;
+    --accent-2: #2a6ee8;
+    --accent-2-soft: #edf2fd;
+    --green: #1a8a5a;
+    --green-soft: #eaf6f0;
+    --amber: #d97706;
+    --amber-soft: #fef3e2;
+    --border: rgba(15,17,23,0.08);
+    --border-strong: rgba(15,17,23,0.16);
+    --shadow-sm: 0 1px 3px rgba(15,17,23,0.06), 0 1px 2px rgba(15,17,23,0.04);
+    --shadow-md: 0 4px 16px rgba(15,17,23,0.08), 0 2px 6px rgba(15,17,23,0.04);
+    --shadow-lg: 0 12px 40px rgba(15,17,23,0.12), 0 4px 16px rgba(15,17,23,0.06);
+    --radius: 12px;
+    --radius-lg: 20px;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'Outfit', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ─── LANDING PAGE ─── */
+  #landing {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #landing::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(232,86,42,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(42,110,232,0.06) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px);
+    pointer-events: none;
+  }
+
+  .landing-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 620px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 40px;
+    padding: 8px 16px;
+    background: var(--ink);
+    border-radius: 40px;
+  }
+
+  .logo-mark span {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .logo-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.8); }
+  }
+
+  .landing-title {
+    font-family: var(--font-display);
+    font-size: clamp(42px, 8vw, 72px);
+    line-height: 1.05;
+    color: var(--ink);
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+  }
+
+  .landing-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .landing-subtitle {
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin-bottom: 48px;
+    font-weight: 400;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Privacy badge */
+  .privacy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--green-soft);
+    border: 1px solid rgba(26,138,90,0.2);
+    border-radius: 40px;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+    margin-bottom: 32px;
+  }
+
+  /* Upload area */
+  .upload-card {
+    background: #fff;
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 48px 40px;
+    margin-bottom: 32px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .upload-card:hover, .upload-card.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .upload-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--surface-2);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 24px;
+  }
+
+  .upload-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .upload-card p {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+  }
+
+  .format-pills {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .format-pill {
+    padding: 4px 12px;
+    background: var(--surface-2);
+    border-radius: 40px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  #file-input { display: none; }
+
+  .advisory {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--amber-soft);
+    border: 1px solid rgba(217,119,6,0.2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 12.5px;
+    color: #92400e;
+    margin-bottom: 24px;
+  }
+
+  .privacy-details {
+    background: var(--ink);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    text-align: left;
+  }
+
+  .privacy-details h4 {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+  }
+
+  .privacy-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .privacy-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .privacy-item .pi-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    margin-top: 1px;
+  }
+
+  /* ─── APP SHELL ─── */
+  #app { display: none; min-height: 100vh; }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(248,247,244,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .topbar-brand {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .topbar-brand .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .tab-btn {
+    padding: 6px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .tab-btn.active {
+    background: #fff;
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .card-info {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    background: var(--surface-2);
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .btn-pdf {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 8px rgba(232,86,42,0.3);
+  }
+
+  .btn-pdf:hover {
+    background: #d14420;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(232,86,42,0.4);
+  }
+
+  .btn-upload-new {
+    padding: 7px 14px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-upload-new:hover { background: var(--surface-2); }
+
+  /* ─── TAB CONTENT ─── */
+  .tab-content { display: none; padding: 28px 24px 80px; max-width: 1400px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .section-meta {
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+  }
+
+  /* ─── STAT CARDS ─── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 32px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+
+  .stat-card.accent { background: var(--accent); border-color: var(--accent); }
+  .stat-card.accent .stat-label, .stat-card.accent .stat-value, .stat-card.accent .stat-sub { color: #fff; }
+  .stat-card.accent .tip { background: rgba(0,0,0,0.25); color: #fff; }
+  .stat-card.accent .tip:hover { background: rgba(0,0,0,0.45); }
+
+  /* ─── CHARTS GRID ─── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  .chart-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-card.full { grid-column: 1 / -1; }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .chart-subtitle {
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-bottom: 20px;
+  }
+
+  .chart-hint {
+    font-size: 10px;
+    color: var(--ink-muted);
+    text-align: right;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  canvas { cursor: pointer; }
+
+  /* ─── WIDGETS ROW ─── */
+  .widgets-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  /* ─── UPI WIDGET ─── */
+  .widget-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .widget-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .badge {
+    padding: 2px 8px;
+    border-radius: 40px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+
+  .badge-blue { background: var(--accent-2-soft); color: var(--accent-2); }
+  .badge-green { background: var(--green-soft); color: var(--green); }
+  .badge-orange { background: var(--accent-soft); color: var(--accent); }
+  .badge-amber { background: var(--amber-soft); color: var(--amber); }
+
+  .upi-stat-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .upi-stat {
+    flex: 1;
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+
+  .upi-stat-val {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .upi-stat-label {
+    font-size: 10px;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  .mini-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .mini-list::-webkit-scrollbar { width: 3px; }
+  .mini-list::-webkit-scrollbar-track { background: transparent; }
+  .mini-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+  .mini-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .mini-list-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mini-list-amt {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  /* ─── ANOMALIES ─── */
+  .anomaly-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .anomaly-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--amber-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .anomaly-body { flex: 1; }
+  .anomaly-merchant { font-weight: 600; font-size: 13px; }
+  .anomaly-reason { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+  .anomaly-amt { font-family: var(--font-mono); font-size: 13px; color: var(--accent); font-weight: 500; }
+
+  /* ─── REWARDS WIDGET ─── */
+  .rewards-card {
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+
+  .rewards-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .rewards-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rewards-title .star { font-size: 18px; }
+
+  .rewards-gate {
+    padding: 40px 24px;
+    text-align: center;
+  }
+
+  .rewards-gate p {
+    font-size: 13px;
+    color: var(--ink-muted);
+    max-width: 380px;
+    margin: 0 auto 20px;
+    line-height: 1.6;
+  }
+
+  .btn-confirm {
+    padding: 10px 24px;
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-confirm:hover { background: #16213e; }
+
+  .rewards-content { display: none; padding: 24px; }
+  .rewards-content.visible { display: block; }
+
+  .rewards-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .reward-stat {
+    text-align: center;
+    padding: 16px;
+    background: var(--surface);
+    border-radius: 10px;
+  }
+
+  .reward-stat-val {
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--green);
+  }
+
+  .reward-stat-label {
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+  }
+
+  /* ─── TRANSACTION TABLE ─── */
+  .table-wrap {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 28px;
+  }
+
+  .table-toolbar {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+
+  .filter-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .table-count {
+    font-size: 12px;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    margin-left: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+
+  .data-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .data-table thead th:hover { color: var(--ink); }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .data-table tbody tr:hover { background: var(--surface); }
+  .data-table tbody tr:last-child { border-bottom: none; }
+
+  .data-table tbody td {
+    padding: 11px 16px;
+    vertical-align: middle;
+  }
+
+  .td-date {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+
+  .td-time {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .td-merchant {
+    font-weight: 500;
+    max-width: 200px;
+  }
+
+  .td-raw {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-muted);
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row-credit { background: rgba(22,163,74,0.06) !important; }
+  .btn-add-cat { background:none;border:1px dashed var(--border);border-radius:6px;padding:6px 12px;font-size:11px;font-family:var(--font-body);cursor:pointer;color:var(--ink-muted);white-space:nowrap;transition:all 0.15s; }
+  .btn-add-cat:hover { border-color:var(--accent);color:var(--accent); }
+  .mini-list-clickable { cursor:pointer;transition:background 0.12s;border-radius:6px;padding-left:8px; }
+  .mini-list-clickable:hover { background:var(--surface-2); }
+  .row-credit:hover { background: rgba(22,163,74,0.1) !important; }
+  .td-debit { color: var(--ink) !important; font-weight:600; }
+  .td-credit { color: var(--green) !important; font-weight:600; }
+  .neucoins-badge { background:#fef3c7;color:#92400e;font-size:10px;font-family:var(--font-mono);padding:2px 6px;border-radius:4px;font-weight:600; }
+  .td-amount {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .td-amount.debit { color: var(--accent); }
+  .td-amount.credit { color: var(--green); }
+
+  .cat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 40px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .cat-pill:hover { opacity: 0.8; }
+
+  .edit-inline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-muted);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  tr:hover .edit-btn { opacity: 1; }
+  .edit-btn:hover { background: var(--surface-2); color: var(--ink); }
+
+  .inline-edit-input {
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    outline: none;
+    background: #fff;
+    width: 140px;
+  }
+
+  .type-badge {
+    padding: 2px 8px;
+    border-radius: 40px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+
+  .type-debit { background: rgba(232,86,42,0.08); color: var(--accent); }
+  .type-credit { background: var(--green-soft); color: var(--green); }
+
+  .flag-icon { font-size: 12px; cursor: help; }
+
+  /* ─── COMPARISON TAB ─── */
+  .comp-upload-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .comp-slot {
+    background: #fff;
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .comp-slot:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .comp-slot.loaded { border-style: solid; border-color: var(--green); background: var(--green-soft); }
+
+  .comp-slot-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--ink-muted);
+  }
+
+  .comp-slot.loaded .comp-slot-num {
+    background: var(--green);
+    color: #fff;
+  }
+
+  .comp-slot h4 { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .comp-slot p { font-size: 12px; color: var(--ink-muted); }
+
+  .comp-tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+  }
+
+  /* ─── MODAL (drilldown) ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(15,17,23,0.5);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(4px);
+    box-sizing: border-box;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    max-width: 720px;
+    width: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+    animation: modal-in 0.2s ease;
+  }
+
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(16px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title { font-family: var(--font-display); font-size: 22px; }
+  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--ink-muted); padding: 4px 8px; border-radius: 6px; }
+  .modal-close:hover { background: var(--surface-2); }
+  .modal-body { overflow-y: auto; padding: 20px 24px; flex: 1; }
+
+  /* ─── FOOTER / REMAPPING LOG ─── */
+  .footer-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 90;
+    background: var(--ink);
+    color: #fff;
+  }
+
+  .footer-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    cursor: pointer;
+    user-select: none;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .footer-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .footer-count {
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 40px;
+    font-family: var(--font-mono);
+  }
+
+  .footer-chevron {
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    transition: transform 0.2s;
+  }
+
+  .footer-bar.open .footer-chevron { transform: rotate(180deg); }
+
+  .footer-panel {
+    display: none;
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 0 24px 16px;
+  }
+
+  .footer-bar.open .footer-panel { display: block; }
+
+  .footer-panel::-webkit-scrollbar { width: 4px; }
+  .footer-panel::-webkit-scrollbar-track { background: transparent; }
+  .footer-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+  .footer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 12px;
+  }
+
+  .footer-toolbar-left { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+  .btn-copy-log {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-copy-log:hover { background: rgba(255,255,255,0.14); }
+
+  .log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .log-table th {
+    text-align: left;
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.35);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .log-table td {
+    padding: 7px 12px;
+    color: rgba(255,255,255,0.7);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-family: var(--font-mono);
+  }
+
+  .log-table td:first-child { color: rgba(255,255,255,0.4); }
+  .log-table td:nth-child(2) { color: #fff; }
+  .log-table td:nth-child(4) { color: rgba(255,255,255,0.4); font-size: 10px; }
+
+  /* ─── EXIT POPUP ─── */
+  .exit-popup {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    background: var(--ink);
+    color: #fff;
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-lg);
+    width: 360px;
+    animation: slide-up 0.3s ease;
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  .exit-popup.show { display: block; }
+  .exit-popup h4 { font-size: 14px; margin-bottom: 8px; }
+  .exit-popup p { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 16px; line-height: 1.5; }
+
+  .exit-popup-btns { display: flex; gap: 8px; }
+
+  .btn-exit-copy {
+    flex: 1;
+    padding: 9px 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-exit-dismiss {
+    padding: 9px 16px;
+    background: rgba(255,255,255,0.08);
+    border: none;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.6);
+    font-family: var(--font-body);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ─── EMPTY STATES ─── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--ink-muted);
+  }
+
+  .empty-state .es-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state h4 { font-size: 16px; color: var(--ink-soft); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; max-width: 320px; margin: 0 auto; }
+
+  /* ─── UTIL ─── */
+  .hidden { display: none !important; }
+  .loading { opacity: 0.5; pointer-events: none; }
+
+  @media (max-width: 768px) {
+    .charts-grid, .widgets-row { grid-template-columns: 1fr; }
+    .privacy-items { grid-template-columns: 1fr; }
+    .comp-upload-grid { grid-template-columns: 1fr; }
+    .rewards-summary { grid-template-columns: 1fr; }
+    .topbar { flex-wrap: wrap; height: auto; padding: 12px 16px; gap: 8px; }
+  }
+
+  /* ─── CATEGORY COLOURS ─── */
+  .cat-food { background: #fef3e2; color: #d97706; border-color: rgba(217,119,6,0.2); }
+  .cat-travel { background: #edf2fd; color: #2a6ee8; border-color: rgba(42,110,232,0.2); }
+  .cat-shopping { background: #fdf0ec; color: #e8562a; border-color: rgba(232,86,42,0.2); }
+  .cat-entertainment { background: #f3e8fd; color: #9333ea; border-color: rgba(147,51,234,0.2); }
+  .cat-health { background: #eaf6f0; color: #1a8a5a; border-color: rgba(26,138,90,0.2); }
+  .cat-utilities { background: #f0f9ff; color: #0284c7; border-color: rgba(2,132,199,0.2); }
+  .cat-upi { background: #f5f3ff; color: #7c3aed; border-color: rgba(124,58,237,0.2); }
+  .cat-fuel { background: #fff7ed; color: #c2410c; border-color: rgba(194,65,12,0.2); }
+  .cat-rewards { background: #eaf6f0; color: #1a8a5a; border-color: rgba(26,138,90,0.2); }
+  .cat-finance { background: #f8fafc; color: #475569; border-color: rgba(71,85,105,0.2); }
+  .cat-other { background: var(--surface-2); color: var(--ink-muted); border-color: var(--border); }
+  .cat-unknown { background: var(--amber-soft); color: var(--amber); border-color: rgba(217,119,6,0.2); }
+
+  /* ── Tooltip ─────────────────────────────────── */
+  .tip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 9px; font-weight: 700; cursor: pointer;
+    position: absolute; top: 12px; right: 12px;
+    font-family: var(--font-mono); flex-shrink: 0;
+    opacity: 0.7; transition: opacity 0.15s;
+    z-index: 2;
+  }
+  .tip:hover { opacity: 1; }
+  .tip::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a2e; color: #fff;
+    font-size: 11px; font-family: var(--font-body); font-weight: 400;
+    line-height: 1.5; padding: 8px 12px; border-radius: 8px;
+    white-space: normal; width: 220px;
+    pointer-events: none; opacity: 0; transition: opacity 0.15s;
+    z-index: 200; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
+  .tip:hover::after { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ SAMPLE MODAL ═══════════════════════════════ -->
+<div class="modal-overlay" id="sample-modal" onclick="closeSampleModal(event)">
+  <div class="modal" style="max-width:900px;max-height:90vh">
+    <div class="modal-header">
+      <div class="modal-title">What StatementSense looks like</div>
+      <button class="modal-close" onclick="closeSampleModal()">✕</button>
+    </div>
+    <div class="modal-body" id="sample-modal-body" style="padding:0"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ LANDING ═══════════════════════════════ -->
+<div id="landing">
+  <div class="landing-inner">
+    <div class="logo-mark">
+      <div class="logo-dot"></div>
+      <span>StatementSense</span>
+    </div>
+
+    <h1 class="landing-title">Your statement,<br><em>finally decoded.</em></h1>
+    <p class="landing-subtitle">Upload your CC statement and get instant clarity — categorised, visualised, and completely private.</p>
+
+    <div class="privacy-badge">
+      <span>🔒</span>
+      <span>100% private — runs entirely in your browser</span>
+    </div>
+
+    <div class="upload-card" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">📊</div>
+      <h3>Drop your statement here</h3>
+      <p>Drag and drop or click to browse your device</p>
+      <div style="margin-top:20px">
+        <span style="display:inline-block;padding:10px 28px;background:var(--accent);color:#fff;border-radius:10px;font-size:14px;font-weight:600;letter-spacing:0.01em;box-shadow:0 2px 10px rgba(232,86,42,0.3)">Upload Statement</span>
+      </div>
+      <p style="margin-top:14px;font-size:12px;color:var(--ink-muted)">Accepted formats: <span style="font-family:var(--font-mono);font-size:11px">XLS · XLSX</span></p>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls" />
+
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:20px">
+      <button onclick="loadSampleData()" style="background:none;border:none;color:var(--accent);font-family:var(--font-body);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-weight:500">
+        👁 See a sample dashboard first
+      </button>
+    </div>
+
+    <div class="advisory">
+      <span>⚠️</span>
+      <span>If you've opened your statement in Excel before uploading, some data may have been quietly reformatted. Use the file directly as downloaded from your bank portal for best results.</span>
+    </div>
+
+    <div class="privacy-details">
+      <h4>How your privacy is protected</h4>
+      <div class="privacy-items">
+        <div class="privacy-item">
+          <div class="pi-icon">🛡</div>
+          <span>Your file is read locally in this tab and never transmitted anywhere</span>
+        </div>
+        <div class="privacy-item">
+          <div class="pi-icon">💨</div>
+          <span>All data stays inside this browser tab only — close it and everything disappears. Nothing is written to your device, to any server, or anywhere else</span>
+        </div>
+        <div class="privacy-item">
+          <div class="pi-icon">🔑</div>
+          <span>Card number and name are masked — no raw sensitive data shown</span>
+        </div>
+        <div class="privacy-item">
+          <div class="pi-icon">📵</div>
+          <span>No accounts, no logins, no servers, no tracking — ever</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ APP ═══════════════════════════════ -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-brand">
+        <div class="dot"></div>
+        StatementSense
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('comparison')">Compare Statements</button>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="card-info" id="topbar-card-info">••</div>
+      <button class="btn-upload-new" onclick="resetApp()">↑ New Statement</button>
+      <button class="btn-pdf" onclick="exportPDF()">
+        <span>↓</span> Download PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD TAB -->
+  <div class="tab-content active" id="tab-dashboard">
+
+    <div class="section-header">
+      <h2 class="section-title">Statement Overview</h2>
+    </div>
+    <div id="statement-identity" style="display:none;background:var(--ink);border-radius:var(--radius-lg);padding:24px 32px;margin-bottom:28px;align-items:center;gap:40px;flex-wrap:wrap;box-shadow:var(--shadow-md)">
+      <div>
+        <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:8px">Cardholder</div>
+        <div style="font-size:22px;font-weight:700;color:#fff;font-family:var(--font-body);letter-spacing:-0.01em" id="identity-name">—</div>
+      </div>
+      <div style="width:1px;height:48px;background:rgba(255,255,255,0.1);align-self:center"></div>
+      <div>
+        <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:8px">Card</div>
+        <div style="font-size:18px;font-weight:600;color:rgba(255,255,255,0.9);font-family:var(--font-mono);letter-spacing:0.1em" id="identity-card">—</div>
+      </div>
+      <div style="width:1px;height:48px;background:rgba(255,255,255,0.1);align-self:center"></div>
+      <div style="flex:1;min-width:260px">
+        <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:8px">Statement Period</div>
+        <div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-0.01em;font-family:var(--font-display)" id="statement-period">—</div>
+      </div>
+
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-card accent">
+        <div class="stat-label">Total Spend <span class="tip" data-tip="Sum of all debit (purchase) transactions in this statement period.">?</span></div>
+        <div class="stat-value" id="stat-total">₹0</div>
+        <div class="stat-sub" id="stat-txn-count">0 transactions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Largest Transaction <span class="tip" data-tip="The single highest-value debit transaction this cycle.">?</span></div>
+        <div class="stat-value" id="stat-largest">₹0</div>
+        <div class="stat-sub" id="stat-largest-merchant">—</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Total Payments <span class="tip" data-tip="Sum of all credit-type entries this cycle — card payments made, refunds, and reversals posted to your account.">?</span></div>
+        <div class="stat-value" id="stat-payments">₹0</div>
+        <div class="stat-sub" id="stat-payments-count">0 entries</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total NeuCoins <span class="tip" data-tip="Your current NeuCoins balance with the bank as reported in this statement's Reward Points Summary. Also shown as a percentage of your total spend this cycle.">?</span></div>
+        <div class="stat-value" id="stat-neucoins">—</div>
+        <div class="stat-sub" id="stat-neucoins-pct">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Top Category <span class="tip" data-tip="The spending category where you spent the most this cycle.">?</span></div>
+        <div class="stat-value" id="stat-top-cat">—</div>
+        <div class="stat-sub" id="stat-top-cat-amt">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Reward Rate <span class="tip" data-tip="NeuCoins earned per ₹100 spent. Formula: (NeuCoins with Bank ÷ Total Spend) × 100. Higher is better.">?</span></div>
+        <div class="stat-value" id="stat-reward-rate">—</div>
+        <div class="stat-sub" id="stat-reward-rate-sub">NeuCoins per ₹100</div>
+      </div>
+    </div>
+
+    <div class="section-header" style="margin-top:32px"><h2 class="section-title">Spending Breakdown</h2></div>
+    <!-- CHARTS -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Spending by Category</div>
+        <div class="chart-subtitle">Click any segment to see transactions</div>
+        <canvas id="chart-category" height="260"></canvas>
+        <div class="chart-hint">Click to drill down</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top Merchants</div>
+        <div class="chart-subtitle">Highest spend merchants this cycle</div>
+        <canvas id="chart-merchants" height="260"></canvas>
+        <div class="chart-hint">Click to drill down</div>
+      </div>
+      <div class="chart-card full">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+          <div>
+            <div class="chart-title" style="margin-bottom:2px">Spend Pattern</div>
+            <div class="chart-subtitle">Click any bar to drill down into transactions</div>
+          </div>
+          <div style="display:flex;gap:4px;background:var(--surface-2);border-radius:8px;padding:3px">
+            <button id="timeline-btn-daily" onclick="setTimelineView('daily')"
+              style="padding:5px 14px;border-radius:6px;border:none;font-size:12px;font-family:var(--font-body);cursor:pointer;font-weight:600;background:var(--accent);color:#fff">Daily</button>
+            <button id="timeline-btn-weekly" onclick="setTimelineView('weekly')"
+              style="padding:5px 14px;border-radius:6px;border:none;font-size:12px;font-family:var(--font-body);cursor:pointer;font-weight:500;background:transparent;color:var(--ink-muted)">Weekly</button>
+          </div>
+        </div>
+        <canvas id="chart-timeline" height="160"></canvas>
+        <div class="chart-hint">Click any bar to see transactions</div>
+      </div>
+    </div>
+
+    <div class="section-header" style="margin-top:32px"><h2 class="section-title">Spending Signals</h2></div>
+    <!-- WIDGETS ROW: UPI + ANOMALIES -->
+    <div class="widgets-row">
+      <!-- UPI WIDGET -->
+      <div class="widget-card">
+        <div class="widget-header">
+          <div class="widget-title">
+            <span>📱</span> UPI Transactions <span class="tip" data-tip="Transactions flagged as UPI (contain UPI or @ in description). The badge shows total individual transactions. The list below groups by payee — multiple payments to the same payee are combined into one row showing their total.">?</span>
+            <span class="badge badge-blue" id="upi-count-badge">0</span>
+          </div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-top:4px;font-family:var(--font-mono)">Grouped by payee · <span id="upi-payee-count">0</span> unique payees</div>
+        </div>
+        <div class="upi-stat-row">
+          <div class="upi-stat">
+            <div class="upi-stat-val" id="upi-total">₹0</div>
+            <div class="upi-stat-label">Total UPI Spend</div>
+          </div>
+          <div class="upi-stat">
+            <div class="upi-stat-val" id="upi-count">0</div>
+            <div class="upi-stat-label">Transactions</div>
+          </div>
+          <div class="upi-stat">
+            <div class="upi-stat-val" id="upi-avg">₹0</div>
+            <div class="upi-stat-label">Avg Amount</div>
+          </div>
+        </div>
+        <ul class="mini-list" id="upi-list">
+          <li class="mini-list-item" style="justify-content:center;color:var(--ink-muted)">No UPI transactions found</li>
+        </ul>
+      </div>
+
+      <!-- ANOMALIES WIDGET -->
+      <div class="widget-card">
+        <div class="widget-header">
+          <div class="widget-title">
+            <span>⚠️</span> Anomalies & Flags <span class="tip" data-tip="Transactions that are 3× or more above your average spend for this cycle. These may warrant a closer look.">?</span>
+            <span class="badge badge-amber" id="anomaly-count-badge">0</span>
+          </div>
+        </div>
+        <div id="anomaly-list">
+          <div class="empty-state" style="padding:30px 12px">
+            <div class="es-icon">✅</div>
+            <h4>All clear</h4>
+            <p>No unusual transactions detected</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TATANEU REWARDS -->
+    <div class="rewards-card" id="rewards-card" style="display:none">
+      <div class="rewards-header">
+        <div class="rewards-title">
+          <span class="star">✦</span>
+          Rewards Program Points Summary
+        </div>
+        <span id="rewards-total-badge" class="badge" style="background:rgba(217,119,6,0.15);color:#b45309;font-family:var(--font-mono);font-size:11px;padding:4px 10px;border-radius:20px"></span>
+      </div>
+      <div id="rewards-program-table" style="margin-top:16px"></div>
+    </div>
+
+    <div class="section-header" style="margin-top:32px"><h2 class="section-title">All Transactions</h2></div>
+    <!-- TRANSACTION TABLE -->
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <input class="search-input" type="text" placeholder="Search merchant, category, amount…" oninput="filterTable(this.value)" id="table-search">
+        <select class="filter-select" onchange="filterByCategory(this.value)" id="cat-filter">
+          <option value="">All Categories</option>
+        </select>
+        <button onclick="addCustomCategory()" class="btn-add-cat" title="Add a custom spending category">+ Category</button>
+        <select class="filter-select" onchange="filterByType(this.value)">
+          <option value="">All Types</option>
+          <option value="debit">Debits</option>
+          <option value="credit">Credits</option>
+        </select>
+        <span class="table-count" id="table-count">— transactions</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table" id="main-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('date')">Date ↕</th>
+              <th>Time</th>
+              <th>Merchant</th>
+              <th>Raw Name</th>
+              <th>Category</th>
+              <th onclick="sortTable('amount')" style="text-align:right">Amount ↕</th>
+              <th>NeuCoins</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARISON TAB -->
+  <div class="tab-content" id="tab-comparison">
+    <div class="section-header">
+      <h2 class="section-title">Compare Statements</h2>
+      <span class="section-meta">Upload up to 3 statements</span>
+    </div>
+
+    <div class="comp-upload-grid">
+      <div class="comp-slot" id="comp-slot-0" onclick="triggerCompUpload(0)">
+        <div class="comp-slot-num">1</div>
+        <h4>Statement 1</h4>
+        <p>Click to upload XLS or XLSX</p>
+      </div>
+      <div class="comp-slot" id="comp-slot-1" onclick="triggerCompUpload(1)">
+        <div class="comp-slot-num">2</div>
+        <h4>Statement 2</h4>
+        <p>Click to upload XLS or XLSX</p>
+      </div>
+      <div class="comp-slot" id="comp-slot-2" onclick="triggerCompUpload(2)">
+        <div class="comp-slot-num">3</div>
+        <h4>Statement 3</h4>
+        <p>Click to upload XLS or XLSX</p>
+      </div>
+    </div>
+    <input type="file" id="comp-file-input" accept=".xlsx,.xls" style="display:none">
+
+    <div class="comp-tables" id="comp-tables"></div>
+
+    <div class="empty-state" id="comp-empty">
+      <div class="es-icon">📂</div>
+      <h4>Upload statements to compare</h4>
+      <p>Load up to 3 billing cycles and view their transaction tables side by side.</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--ink-muted)">Full comparison analysis coming in V2.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ FOOTER REMAPPING LOG ═══ -->
+<div class="footer-bar" id="footer-bar" style="display:none">
+  <div class="footer-toggle" onclick="toggleFooter()">
+    <div class="footer-toggle-label">
+      <span>🗂</span>
+      Merchant Mappings Log
+      <span class="footer-count" id="footer-count">0</span>
+    </div>
+    <span class="footer-chevron">▲</span>
+  </div>
+  <div class="footer-panel" id="footer-panel">
+    <div class="footer-toolbar">
+      <span class="footer-toolbar-left" id="footer-toolbar-label">User-defined merchant remappings</span>
+      <button class="btn-copy-log" onclick="copyMappingLog()">📋 Copy Log</button>
+    </div>
+    <table class="log-table" id="log-table">
+      <thead>
+        <tr>
+          <th>Raw Merchant String</th>
+          <th>Your Label</th>
+          <th>Category</th>
+          <th>Added</th>
+        </tr>
+      </thead>
+      <tbody id="log-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PDF PREVIEW MODAL ═══ -->
+<div class="modal-overlay" id="pdf-preview-modal" onclick="if(event.target===this)closePDFPreview()" style="z-index:9998">
+  <div class="modal" style="max-width:700px;max-height:90vh">
+    <div class="modal-header">
+      <div class="modal-title">PDF Preview</div>
+      <button class="modal-close" onclick="closePDFPreview()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="padding:0;overflow:hidden">
+      <div style="padding:16px 20px;background:var(--surface-2);border-bottom:1px solid var(--border);font-size:12px;color:var(--ink-muted)">
+        Preview of your export. Confirm to download.
+      </div>
+      <div id="pdf-preview-pages" style="padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:55vh;background:#e8e8e8"></div>
+      <div style="padding:16px 20px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border)">
+        <button onclick="closePDFPreview()" style="padding:9px 20px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font-body);cursor:pointer;font-size:13px">Cancel</button>
+        <button onclick="confirmDownloadPDF()" style="padding:9px 22px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font-body);font-weight:600;cursor:pointer;font-size:13px">&#x2193; Download PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD CATEGORY MODAL ═══ -->
+<div class="modal-overlay" id="add-cat-modal" onclick="if(event.target===this)closeAddCatModal()" style="z-index:9999">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">Manage Categories</div>
+      <button class="modal-close" onclick="closeAddCatModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="padding:20px">
+      <div style="margin-bottom:8px;font-size:13px;color:var(--ink-soft)">New category name:</div>
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <input id="add-cat-input" class="search-input" type="text" placeholder="e.g. Subscriptions" style="flex:1;font-size:14px">
+        <button onclick="confirmAddCat()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font-body);font-weight:600;cursor:pointer;font-size:13px;white-space:nowrap">Add</button>
+      </div>
+      <div id="custom-cat-list"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button onclick="closeAddCatModal()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font-body);cursor:pointer;font-size:13px">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DRILLDOWN MODAL ═══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Transactions</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ═══ EXIT POPUP ═══ -->
+<div class="exit-popup" id="exit-popup">
+  <h4>📋 You have new merchant remappings</h4>
+  <p id="exit-popup-msg">Copy and send these to have them baked into the app permanently — so they apply automatically next time.</p>
+  <div class="exit-popup-btns">
+    <button class="btn-exit-copy" onclick="copyMappingLog(); dismissExitPopup()">Copy Mappings</button>
+    <button class="btn-exit-dismiss" onclick="dismissExitPopup()">Dismiss</button>
+  </div>
+</div>
+
+<!-- ═══ DEBUG PANEL ═══ -->
+<div class="modal-overlay" id="debug-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:860px;max-height:90vh">
+    <div class="modal-header" style="background:var(--ink);color:#fff;border-radius:var(--radius-lg) var(--radius-lg) 0 0">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div class="modal-title" style="color:#fff;font-size:18px">🔍 Raw File Structure</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);font-family:var(--font-mono)">No transactions were found. Review the rows below and tell us which row has the headers and what each column contains.</div>
+      </div>
+      <button class="modal-close" style="color:rgba(255,255,255,0.6)" onclick="document.getElementById('debug-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="debug-modal-body"></div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let allTransactions = [];
+let filteredTransactions = [];
+let sortState = { col: 'date', dir: 'desc' };
+let charts = {};
+let newMappingsThisSession = 0;
+let compStatements = [null, null, null];
+let activeCompSlot = -1;
+let rewardsConfirmed = false;
+
+const SEED_MERCHANT_MAP = [
+  { raw: "TURFTOWNTECHNOLOGI Delhi", label: "TURF TOWN", category: "Entertainment", source: "seed" },
+  { raw: "A RANGASWAMY CHETTIAR SCOIMBATORE", label: "RENGAS RS PURAM", category: "Food & Dining", source: "seed" },
+  { raw: "G R THANGAMALIGAI JEWE LCOIMBATORE", label: "GRT JEWELLERY", category: "Shopping", source: "seed" },
+  { raw: "ADITYA BIRLA LIFESTYL Mumbai", label: "ADITYA BIRLA Mumbai", category: "Shopping", source: "seed" },
+  { raw: "LEVI BENGALURU", label: "LEVI", category: "Shopping", source: "seed" },
+  { raw: "DISTRICTDINING GURGOAN", label: "DISTRICT DINING", category: "Food & Dining", source: "seed" },
+  { raw: "M S SANCHARI BY CHEF P IPALAKKAD", label: "M S BY CHEF", category: "Food & Dining", source: "seed" },
+  { raw: "ZOMATO Gurugram", label: "ZOMATO", category: "Food & Dining", source: "seed" },
+  { raw: "MANI MICROBIOLOGICAL L ACOIMBATORE", label: "MICROBIOLOGY LAB", category: "Health & Medical", source: "seed" },
+  { raw: "UPI-PICKLE CITY", label: "PICKLE CITY", category: "Entertainment", source: "seed" },
+  { raw: "UPI-SEERAPHIC", label: "STUDIO 11 SALON", category: "Utilities", source: "seed" },
+  { raw: "UPI-SN CHICKEN", label: "SN CHICKEN MEAT", category: "Other", source: "seed" },
+  { raw: "ACHYUTAM CREATIONS Coimbatore", label: "THYME & WHISK", category: "Food & Dining", source: "seed" },
+  { raw: "The Haven Brew Coimbatore S", label: "THE CANTEEN", category: "Food & Dining", source: "seed" },
+  { raw: "UPI-KOVAI KUMARAN HOSP ITAL", label: "KOVAI KUMARAN HOSP ITAL", category: "Health & Medical", source: "seed" },
+  { raw: "SSVM KIDSCASA SAIBABA Coimbatore", label: "SSVM SCHOOL", category: "Other", source: "seed" },
+  { raw: "PostalLifeCRCard Mumbai", label: "POST OFFICE - INSURANCE", category: "Finance", source: "seed" },
+  { raw: "SREE ANNAPOORNA LODGIN GCOIMBATORE", label: "FLAMES RS PURAM", category: "Food & Dining", source: "seed" },
+  { raw: "SURESH AGENCIES COIMBATORE", label: "NILGRIS PETROL BUNK", category: "Fuel", source: "seed" },
+  { raw: "TITAN COMPANY LIMITED COIMBATORE", label: "TANISHQ", category: "Shopping", source: "seed" },
+  { raw: "M S THE VILLAGE COIMBATORE", label: "THE VILLAGE RESTAURANT", category: "Food & Dining", source: "seed" },
+  { raw: "LULU INTERNATIONAL SHO PCOIMBATORE", label: "LULU SHOPPING MALL", category: "Shopping", source: "seed" },
+  { raw: "TATA1MGHEALTHCARE GURGOAN", label: "TATA 1MG", category: "Health & Medical", source: "seed" },
+  { raw: "UPI-Madras Coffee Hous e Tidel", label: "UPI-Madras Coffee Hous e", category: "Food & Dining", source: "seed" },
+  { raw: "UPI-ARASU MEDICALS", label: "ARASU MEDICALS", category: "Health & Medical", source: "seed" },
+  { raw: "THE KITCHEN DRAMA TIRUPPUR", label: "THE KITCHEN DRAMA", category: "Food & Dining", source: "seed" },
+  { raw: "UPI-TECHNO SPORTSWEAR PRIVATE", label: "TECHNO SPORTS", category: "Shopping", source: "seed" },
+  { raw: "UPI-SRI SAAI BHAVAN", label: "SRI SAAI BHAVAN", category: "Food & Dining", source: "seed" },
+  { raw: "TATA STARBUCKS PRIVATE COIMBATORE", label: "STARBUCKS", category: "Food & Dining", source: "seed" },
+  { raw: "KUMARAN MEDICALS COIMBATORE", label: "KUMARAN MEDICALS", category: "Health & Medical", source: "seed" },
+  { raw: "TACO BELL COIMBATORE", label: "TACO BELL", category: "Food & Dining", source: "seed" },
+  { raw: "AJFAN INTERNATIONAL RE TCOIMBATORE", label: "AJFAN RE", category: "Food & Dining", source: "seed" },
+  { raw: "SURESH AGENCIES Coimbatore", label: "NILGRIS PETROL BUNK", category: "Fuel", source: "seed" },
+  { raw: "UPI-Jus De Fruits", label: "TIDEL JUICE SHOP", category: "Food & Dining", source: "seed" },
+  { raw: "US Polo Assn Bangalore", label: "US Polo Assn Bangalore", category: "Shopping", source: "seed" },
+  { raw: "SREE KUMARAN THANGAMAL ICOIMBATORE", label: "SREE KUMARAN", category: "Shopping", source: "seed" },
+  { raw: "UPI-KUMARAN MEDICALS", label: "UPI-KUMARAN", category: "Health & Medical", source: "seed" },
+  { raw: "KOVAI ANGATHA BRIYANI COIMBATORE", label: "KOVAI ANGATHA BRIYANI", category: "Food & Dining", source: "seed" },
+  { raw: "GLACIER BITES Coimbatore", label: "GLACIER BITES Coimbatore", category: "Food & Dining", source: "seed" },
+  { raw: "UPI-MK TEA STALL", label: "UPI-MK TEA STALL", category: "Food & Dining", source: "seed" },
+  { raw: "WWW TANISHQ CO IN GURGAON", label: "TANISHQ", category: "Shopping", source: "seed" }
+];
+
+const STORAGE_KEY = 'cc_analyser_merchant_map';
+const CAT_STORAGE_KEY = 'cc_analyser_custom_cats';
+
+function getCustomCats() {
+  try { return JSON.parse(localStorage.getItem(CAT_STORAGE_KEY) || '[]'); } catch { return []; }
+}
+function saveCustomCats(arr) {
+  try { localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(arr)); } catch {}
+}
+function getAllCategoryNames() {
+  return [...Object.keys(CATEGORIES), ...getCustomCats(), 'Other'];
+}
+
+// Category config
+const CATEGORIES = {
+  'Food & Dining': { class: 'cat-food', icon: '🍽️', keywords: ['swiggy','zomato','dominos','pizza','burger','mcd','kfc','restaurant','cafe','food','biryani','hotel','dining'] },
+  'Travel': { class: 'cat-travel', icon: '✈️', keywords: ['irctc','air','flight','ola','uber','rapido','taxi','cab','redbus','makemytrip','cleartrip','yatra','railway','metro'] },
+  'Shopping': { class: 'cat-shopping', icon: '🛍️', keywords: ['amazon','flipkart','myntra','ajio','nykaa','meesho','snapdeal','shop','store','mart','mall','retail'] },
+  'Entertainment': { class: 'cat-entertainment', icon: '🎬', keywords: ['netflix','prime','hotstar','spotify','youtube','bookmyshow','pvr','inox','cinema','gaming','steam'] },
+  'Health & Medical': { class: 'cat-health', icon: '🏥', keywords: ['pharmacy','pharma','hospital','clinic','doctor','apollo','fortis','medplus','netmeds','1mg','healthkart','gym','fitness'] },
+  'Utilities': { class: 'cat-utilities', icon: '⚡', keywords: ['electricity','water','gas','broadband','internet','jio','airtel','bsnl','vi','vodafone','recharge','bill'] },
+  'Fuel': { class: 'cat-fuel', icon: '⛽', keywords: ['petrol','diesel','hp','bharat','indian oil','shell','fuel','bpcl','iocl'] },
+  'Finance': { class: 'cat-finance', icon: '🏦', keywords: ['emi','loan','insurance','lic','hdfc','icici','axis','sbi','bank','invest','mutual','zerodha','groww','payment'] },
+  'Rewards': { class: 'cat-rewards', icon: '✦', keywords: ['reward','cashback','neucoins','refund','reversal','credit'] },
+};
+
+// Load any previously saved custom categories into the live CATEGORIES map
+(function loadCustomCatsOnBoot() {
+  try {
+    const custom = JSON.parse(localStorage.getItem('cc_analyser_custom_cats') || '[]');
+    custom.forEach(name => {
+      if (!CATEGORIES[name]) CATEGORIES[name] = { class: 'cat-other', icon: '📂', keywords: [] };
+    });
+  } catch {}
+})();
+
+function categorise(raw) {
+  const s = raw.toLowerCase();
+  for (const [cat, config] of Object.entries(CATEGORIES)) {
+    if (config.keywords.some(k => s.includes(k))) return cat;
+  }
+  return 'Other';
+}
+
+function getMerchantMap() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    // If localStorage is empty or missing, seed it with built-in mappings
+    if (!stored || stored.length === 0) {
+      saveMerchantMap(SEED_MERCHANT_MAP);
+      return [...SEED_MERCHANT_MAP];
+    }
+    return stored;
+  } catch { return [...SEED_MERCHANT_MAP]; }
+}
+
+function saveMerchantMap(map) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
+  catch {}
+}
+
+function lookupRemapping(raw) {
+  const map = getMerchantMap();
+  return map.find(m => m.raw === raw) || null;
+}
+
+function addRemapping(raw, label, category) {
+  const map = getMerchantMap();
+  const existing = map.findIndex(m => m.raw === raw);
+  const entry = { raw, label, category, source: 'user', created_at: new Date().toISOString() };
+  if (existing >= 0) map[existing] = entry;
+  else { map.push(entry); newMappingsThisSession++; }
+  saveMerchantMap(map);
+  renderFooterLog();
+  updateFooterCount();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FILE PARSING
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) loadFile(e.target.files[0], 'main');
+});
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0], 'main');
+});
+
+function loadFile(file, target) {
+  const processWorkbook = (workbook) => {
+    try {
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+      console.log('[StatementSense] First 8 rows:', rows.slice(0, 8));
+      const txns = parseHDFC(rows);
+      const meta = txns._meta || {};
+      console.log('[StatementSense] Parsed', txns.length, 'transactions, meta:', meta);
+      if (!txns.length) {
+        showDebugPanel(rows);
+        return;
+      }
+      if (target === 'main') {
+        allTransactions = txns;
+        filteredTransactions = [...txns];
+        initApp(txns, meta);
+      } else {
+        const idx = parseInt(target);
+        compStatements[idx] = { filename: file.name, transactions: txns };
+        renderCompSlot(idx, file.name, txns);
+        renderCompTables();
+      }
+    } catch(err) {
+      console.error('[StatementSense] Process error:', err);
+      alert('Could not parse this file.\n\nError: ' + err.message);
+    }
+  };
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      processWorkbook(XLSX.read(e.target.result, { type: 'array' }));
+    } catch(err) {
+      console.error('[StatementSense] XLSX read error:', err);
+      alert('Could not read this file.\n\nError: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function parseHDFC(rows) {
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ── Step 1: Scan preamble for Name, Card No, Statement Date ──────────────
+  const meta = { name: '', card: '', statementDate: '' };
+  for (let i = 0; i < Math.min(30, rows.length); i++) {
+    const row = rows[i];
+    const rowJoined = row.map(c => String(c || '').trim()).join(' ');
+    for (let j = 0; j < row.length; j++) {
+      const cell = String(row[j] || '').trim();
+      const cellLower = cell.toLowerCase();
+      const nextCell = String(row[j+1] || '').trim();
+      // Name — find row where any cell = "Name", scan right for first non-empty alphabetic cell
+      if (!meta.name && cellLower === 'name') {
+        for (let k = j + 1; k < row.length; k++) {
+          const candidate = String(row[k] || '').trim();
+          if (candidate.length > 1 && /[a-zA-Z]/.test(candidate)) {
+            meta.name = candidate;
+            break;
+          }
+        }
+      }
+      // Statement Date — cell contains "Statement Date"
+      if (!meta.statementDate && cellLower.includes('statement date')) {
+        meta.statementDate = nextCell || cell.replace(/statement\s*date[:\s]*/i,'').trim();
+      }
+    }
+    // Card number — anywhere in the row: "Credit Card No.: 652926XXXXXX0574"
+    if (!meta.card) {
+      const cardMatch = rowJoined.match(/Credit\s+Card\s+No\.?:?\s*([\dXx ]{12,20})/i);
+      if (cardMatch) meta.card = cardMatch[1].replace(/\s/g,'');
+    }
+  }
+  // ── Step 1b: Scan for Reward Points Summary — NeuCoins with Bank ────────────
+  // Strategy: find the section title "Reward Points Summary", then within the
+  // next 10 rows find the header row containing "neucoins with bank", then
+  // grab the numeric value from the data row at that column index.
+  // Falls back to scanning the entire sheet if section title not found.
+  meta.neuCoinsWithBank = 0;
+  (function scanNeuCoins() {
+    // Find starting row — either "Reward Points Summary" title or beginning of sheet
+    let startRow = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const joined = rows[i].map(c => String(c || '').toLowerCase()).join(' ');
+      if (joined.includes('reward points summary')) { startRow = i; break; }
+    }
+    // Within startRow to startRow+15, find header row with "neucoins with bank"
+    for (let i = startRow; i < Math.min(startRow + 15, rows.length - 1); i++) {
+      const rowLow = rows[i].map(c => String(c || '').toLowerCase().trim().replace(/[\n\r]+/g,' ').replace(/\s+/g,' '));
+      // Exact match only — avoids hitting 'Opening NeuCoins with Bank' first
+      const ncColIdx = rowLow.findIndex(cell => cell === 'neucoins with bank');
+      if (ncColIdx < 0) continue;
+      // Found the header — scan next 1-3 rows for a numeric value at same column
+      for (let di = i + 1; di < Math.min(i + 4, rows.length); di++) {
+        const val = rows[di][ncColIdx];
+        const parsed = parseFloat(String(val || '').replace(/,/g, ''));
+        if (!isNaN(parsed) && parsed >= 0) {
+          meta.neuCoinsWithBank = parsed;
+          console.log('[StatementSense] NeuCoins with Bank found at row', di, 'col', ncColIdx, '=', parsed);
+          return;
+        }
+      }
+    }
+    console.log('[StatementSense] NeuCoins with Bank not found in sheet');
+  })();
+
+  // ── Step 1c: Rewards Program Points Summary ──────────────────────────────────
+  // Structure: title row "Rewards Program Points Summary", then header row
+  // ("Programs" | "Bonus Points"), then data rows until "Total" row.
+  meta.rewardPrograms = [];
+  meta.rewardProgramTotal = 0;
+  (function scanRewardPrograms() {
+    // Find the section title
+    let titleRow = -1;
+    for (let i = 0; i < rows.length; i++) {
+      const joined = rows[i].map(c => String(c || '').toLowerCase().trim()).join(' ');
+      if (joined.includes('rewards program points summary')) { titleRow = i; break; }
+    }
+    if (titleRow < 0) {
+      console.log('[StatementSense] Rewards Program Points Summary not found');
+      return;
+    }
+    // Find header row within next 5 rows — look for "programs" and "bonus points"
+    let headerRow = -1;
+    let programCol = -1, pointsCol = -1;
+    for (let i = titleRow + 1; i < Math.min(titleRow + 6, rows.length); i++) {
+      const rowLow = rows[i].map(c => String(c || '').toLowerCase().trim());
+      const pi = rowLow.findIndex(c => c === 'programs' || c === 'program');
+      const bi = rowLow.findIndex(c => c.includes('bonus') && c.includes('point'));
+      if (pi >= 0 && bi >= 0) { headerRow = i; programCol = pi; pointsCol = bi; break; }
+    }
+    if (headerRow < 0) {
+      console.log('[StatementSense] Rewards Program header row not found');
+      return;
+    }
+    // Read data rows until "Total" row or empty section
+    for (let i = headerRow + 1; i < rows.length; i++) {
+      const progRaw = String(rows[i][programCol] || '').trim();
+      const ptsRaw  = String(rows[i][pointsCol]  || '').trim();
+      if (!progRaw) break; // end of section
+      const pts = parseFloat(ptsRaw.replace(/,/g, ''));
+      if (progRaw.toLowerCase() === 'total') {
+        meta.rewardProgramTotal = isNaN(pts) ? 0 : pts;
+        break;
+      }
+      if (!isNaN(pts)) {
+        meta.rewardPrograms.push({ program: progRaw, points: pts });
+      }
+    }
+    console.log('[StatementSense] Reward Programs:', meta.rewardPrograms, 'Total:', meta.rewardProgramTotal);
+  })();
+
+  console.log('[StatementSense] Meta:', meta);
+
+  // ── Step 2: Find transaction header row ───────────────────────────────────
+  // Definitive HDFC CC signal: row contains BOTH "Transaction type" AND "Description"
+  let headerRow = -1;
+  for (let i = 0; i < Math.min(60, rows.length); i++) {
+    const rowLow = rows[i].map(c => String(c || '').toLowerCase().trim());
+    const hasTransType = rowLow.some(c => c.includes('transaction type'));
+    const hasDesc      = rowLow.some(c => c === 'description');
+    const hasAmt       = rowLow.some(c => c === 'amt' || c === 'amount');
+    const hasDate      = rowLow.some(c => c.includes('date'));
+    if (hasTransType && hasDesc) { headerRow = i; break; }
+    // Fallback scoring for other bank formats
+    const score = (hasDate?2:0) + (hasDesc?3:0) + (hasAmt?2:0);
+    if (score >= 5 && headerRow < 0) headerRow = i;
+  }
+  if (headerRow < 0) headerRow = 0;
+
+  const headers = rows[headerRow].map(c =>
+    String(c || '').toLowerCase().trim().replace(/[\n\r]+/g,' ').replace(/\s+/g,' ')
+  );
+  console.log('[StatementSense] Header row', headerRow, ':', headers);
+
+  // ── Step 3: Map columns by header content ─────────────────────────────────
+  function colFor(...candidates) {
+    for (const cand of candidates) {
+      const i = headers.findIndex(h => h === cand);
+      if (i >= 0) return i;
+    }
+    for (const cand of candidates) {
+      const i = headers.findIndex(h => h.includes(cand.split(' ')[0]));
+      if (i >= 0) return i;
+    }
+    return -1;
+  }
+
+  // HDFC CC XLSX exact headers from screenshot:
+  // "Transaction type" | "Primary / Addon Customer Name" | "Date & Time" | "Description" | "Base NeuCoins*" | "AMT" | "Debit / Credit"
+  const colDate      = colFor('date & time', 'date', 'transaction date', 'txn date', 'value date');
+  const colDesc      = colFor('description', 'narration', 'particulars', 'details', 'merchant');
+  const colAmt       = colFor('amt', 'amount', 'transaction amount', 'txn amount');
+  const colDrCr      = colFor('debit / credit', 'debit/credit', 'dr/cr', 'dr / cr', 'type');
+  const colNeuCoins  = colFor('base neucoins*', 'base neucoins', 'neucoins', 'points', 'rewards');
+  // Separate debit/credit amount columns (some HDFC formats)
+  const colDebitAmt  = colFor('debit amount', 'withdrawal amount', 'withdrawal amt (dr)');
+  const colCreditAmt = colFor('credit amount', 'deposit amount', 'deposit amt (cr)');
+
+  console.log('[StatementSense] Columns → date:', colDate, 'desc:', colDesc, 'amt:', colAmt, 'dr/cr:', colDrCr, 'neucoins:', colNeuCoins, 'debitAmt:', colDebitAmt, 'creditAmt:', colCreditAmt);
+
+  // ── Step 4: Parse rows ─────────────────────────────────────────────────────
+  const txns = [];
+  for (let i = headerRow + 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+    const cells = row.map(c => String(c == null ? '' : c).trim());
+    if (cells.filter(Boolean).length < 2) continue;
+
+    // Date — required, skip row if missing/unparseable
+    const dateRaw = colDate >= 0 ? cells[colDate] : '';
+    if (!dateRaw) continue;
+    const { dateStr, timeStr } = parseDateCell(dateRaw);
+    if (!dateStr) continue;
+
+    // Description
+    let rawDesc = colDesc >= 0 ? cells[colDesc] : '';
+    if (!rawDesc) {
+      rawDesc = cells
+        .filter((c, idx) => idx !== colDate && idx !== colDrCr && idx !== colNeuCoins && c.length > 2 && isNaN(parseFloat(c.replace(/,/g,''))))
+        .sort((a,b) => b.length - a.length)[0] || '';
+    }
+    if (!rawDesc) continue;
+    if (/^(total|opening|closing|balance|statement|available|minimum|payment due|page \d|opening bal)/i.test(rawDesc)) continue;
+
+    // Amount & Type
+    let amount = 0, type = 'debit';
+
+    if (colDebitAmt >= 0 && colCreditAmt >= 0 && colDebitAmt !== colCreditAmt) {
+      const dv = parseNum(cells[colDebitAmt]);
+      const cv = parseNum(cells[colCreditAmt]);
+      if (dv > 0)      { amount = dv; type = 'debit'; }
+      else if (cv > 0) { amount = cv; type = 'credit'; }
+    } else if (colAmt >= 0) {
+      // HDFC CC: single AMT column, blank Debit/Credit = debit, "Cr" = credit
+      amount = parseNum(cells[colAmt]);
+      if (colDrCr >= 0) {
+        const flag = cells[colDrCr].trim().toLowerCase();
+        type = (flag === 'cr' || flag === 'credit' || flag.startsWith('cr')) ? 'credit' : 'debit';
+      }
+    } else {
+      // Fallback: scan for first numeric cell
+      for (let ci = 0; ci < cells.length; ci++) {
+        if (ci === colDate || ci === colDesc || ci === colDrCr || ci === colNeuCoins) continue;
+        const v = parseNum(cells[ci]);
+        if (v > 0 && v < 99999999) { amount = v; break; }
+      }
+      if (colDrCr >= 0) {
+        const flag = cells[colDrCr].trim().toLowerCase();
+        type = (flag === 'cr' || flag === 'credit') ? 'credit' : 'debit';
+      }
+    }
+
+    if (amount === 0) continue;
+
+    // NeuCoins earned on this transaction
+    const neuCoins = colNeuCoins >= 0 ? parseNeuCoins(cells[colNeuCoins]) : 0;
+
+    // Categorise
+    const remap    = lookupRemapping(rawDesc);
+    const label    = remap ? remap.label    : normaliseLabel(rawDesc);
+    const category = remap ? remap.category : categorise(rawDesc);
+    const isUPI    = /upi|@/i.test(rawDesc);
+    const isReward = type === 'credit' && /reward|neucoins|cashback|refund|reversal/i.test(rawDesc);
+
+    txns.push({ id: i, date: dateStr, time: timeStr, raw: rawDesc, label, category, amount, type, isUPI, isReward, neuCoins });
+  }
+
+  console.log('[StatementSense] Transactions found:', txns.length);
+  txns._meta = meta;
+  return txns;
+}
+
+function parseNeuCoins(val) {
+  if (!val) return 0;
+  const n = parseFloat(String(val).replace(/[+\s,]/g,''));
+  return isNaN(n) ? 0 : n;
+}
+
+// ── Date cell parser ─────────────────────────────────────────────────────────
+// Primary target: HDFC CC "19/01/2026 / 21:52"
+// Also handles: ISO, DD/MM/YYYY, DD Mon YYYY, Excel serial
+function parseDateCell(raw) {
+  if (!raw) return { dateStr: '', timeStr: '' };
+  raw = raw.trim();
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // HDFC CC format: "19/01/2026 / 21:52"  — date slash-space time
+  const hdfcMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s*\/\s*(\d{1,2}):(\d{2})$/);
+  if (hdfcMatch) {
+    const [,dd,mm,yyyy,hh,min] = hdfcMatch;
+    const h = parseInt(hh), m = parseInt(min);
+    const dateStr = dd.padStart(2,'0') + ' ' + MONTHS[parseInt(mm)-1] + ' ' + yyyy;
+    const timeStr = (h%12||12) + ':' + String(m).padStart(2,'0') + ' ' + (h>=12?'PM':'AM');
+    return { dateStr, timeStr };
+  }
+
+  // DD/MM/YYYY with optional space-separated time
+  const dmyMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if (dmyMatch) {
+    const [,dd,mm,yy,hh,min] = dmyMatch;
+    const yyyy = yy.length === 2 ? 2000+parseInt(yy) : parseInt(yy);
+    const dateStr = dd.padStart(2,'0') + ' ' + MONTHS[parseInt(mm)-1] + ' ' + yyyy;
+    const timeStr = hh ? ((parseInt(hh)%12||12) + ':' + String(parseInt(min||0)).padStart(2,'0') + ' ' + (parseInt(hh)>=12?'PM':'AM')) : '';
+    return { dateStr, timeStr };
+  }
+
+  // ISO 2024-01-15 or 2024-01-15T10:30
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+    const dt = new Date(raw.replace(' ','T'));
+    if (!isNaN(dt)) {
+      const hasTime = raw.includes('T') || (raw.split(' ').length > 1 && raw.split(' ')[1].includes(':'));
+      const h = dt.getHours(), m = dt.getMinutes();
+      return {
+        dateStr: String(dt.getDate()).padStart(2,'0')+' '+MONTHS[dt.getMonth()]+' '+dt.getFullYear(),
+        timeStr: hasTime ? ((h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM')) : ''
+      };
+    }
+  }
+
+  // DD Mon YYYY
+  if (/^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/.test(raw)) {
+    const dt = new Date(raw);
+    if (!isNaN(dt)) {
+      return { dateStr: String(dt.getDate()).padStart(2,'0')+' '+MONTHS[dt.getMonth()]+' '+dt.getFullYear(), timeStr: '' };
+    }
+  }
+
+  // Excel serial (5-digit number)
+  if (/^\d{5}$/.test(raw)) {
+    const dt = new Date(Date.UTC(1899,11,30) + parseInt(raw)*86400000);
+    return { dateStr: String(dt.getUTCDate()).padStart(2,'0')+' '+MONTHS[dt.getUTCMonth()]+' '+dt.getUTCFullYear(), timeStr: '' };
+  }
+
+  return { dateStr: raw, timeStr: '' };
+}
+
+
+function parseNum(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  const n = parseFloat(String(v).replace(/[₹,\s]/g, ''));
+  return isNaN(n) ? 0 : Math.abs(n);
+}
+
+function formatDateStr(s) {
+  if (!s) return '';
+  // Already in readable form like "01 Jan 2024"
+  if (/\d{1,2}\s[A-Za-z]{3}\s\d{4}/.test(s)) return s;
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (m) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const day = m[1].padStart(2,'0');
+    const mon = parseInt(m[2]) - 1;
+    const yr = m[3].length === 2 ? '20' + m[3] : m[3];
+    return `${day} ${months[mon] || m[2]} ${yr}`;
+  }
+  return s;
+}
+
+function convertTo12hr(t) {
+  if (!t) return '';
+  if (t.toLowerCase().includes('am') || t.toLowerCase().includes('pm')) return t;
+  const parts = t.split(':');
+  if (parts.length < 2) return t;
+  let h = parseInt(parts[0]), m = parts[1];
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+function normaliseLabel(raw) {
+  return raw
+    .replace(/[*\/\\@#]/g, ' ')
+    .replace(/\b[A-Z0-9]{8,}\b/g, '')
+    .replace(/\s+/g, ' ')
+    .split(' ').slice(0, 4).join(' ')
+    .trim() || raw.split(' ')[0];
+}
+
+function redactName(name) {
+  if (!name || name.length <= 8) return name;
+  return name.slice(0, 4) + '•'.repeat(name.length - 8) + name.slice(-4);
+}
+
+function redactCard(card) {
+  if (!card) return '••';
+  const s = String(card).replace(/\s/g,'');
+  if (s.length <= 6) return s.slice(0,2) + '••••••' + s.slice(-4);
+  return s.slice(0,2) + '••••••••' + s.slice(-4);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT APP
+// ═══════════════════════════════════════════════════════════════
+function initApp(txns, meta) {
+  window._lastMeta = meta;
+  meta = meta || {};
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('footer-bar').style.display = 'block';
+
+  populateStats(txns, meta);
+  populateCatFilter(txns);
+  renderCharts(txns);
+  renderTable(txns);
+  renderUPI(txns);
+  renderAnomalies(txns);
+  renderRewards(txns, meta);
+  renderFooterLog();
+  updateFooterCount();
+
+  // Statement identity bar
+  const bar = document.getElementById('statement-identity');
+  bar.style.display = 'flex';
+
+  // Statement Date — prefer the explicit date from the preamble (e.g. "18 Feb, 2026")
+  // Fall back to first–last transaction range if not found
+  let period = '—';
+  if (meta.statementDate) {
+    period = meta.statementDate;
+  } else {
+    const dates = txns.filter(t => t.date).map(t => t.date);
+    if (dates.length) period = dates[0] + ' – ' + dates[dates.length - 1];
+  }
+  document.getElementById('statement-period').textContent = period;
+  document.getElementById('identity-name').textContent = meta.name ? redactName(meta.name) : 'HDFC Cardholder';
+  document.getElementById('identity-card').textContent = meta.card ? redactCard(meta.card) : 'TataNeu Infinity ••••';
+  document.getElementById('topbar-card-info').textContent = meta.card ? 'HDFC ' + redactCard(meta.card) : 'HDFC TataNeu ••••';
+}
+
+function populateStats(txns, meta) {
+  const debits = txns.filter(t => t.type === 'debit');
+  const credits = txns.filter(t => t.type === 'credit');
+  const total = debits.reduce((s,t) => s + t.amount, 0);
+  const largest = [...debits].sort((a,b) => b.amount - a.amount)[0];
+
+  document.getElementById('stat-total').textContent = fmt(total);
+  document.getElementById('stat-txn-count').textContent = debits.length + ' debit transactions';
+  document.getElementById('stat-largest').textContent = largest ? fmt(largest.amount) : '₹0';
+  document.getElementById('stat-largest-merchant').textContent = largest ? largest.label : '—';
+
+  // Total Payments (sum of all Cr entries)
+  const paymentTotal = credits.reduce((s,t) => s + t.amount, 0);
+  document.getElementById('stat-payments').textContent = fmt(paymentTotal);
+  document.getElementById('stat-payments-count').textContent = credits.length + ' entr' + (credits.length === 1 ? 'y' : 'ies');
+
+  // Total NeuCoins with Bank — plain value from Reward Points Summary
+  const nc = (meta && meta.neuCoinsWithBank) ? meta.neuCoinsWithBank : 0;
+  if (nc > 0) {
+    document.getElementById('stat-neucoins').textContent = nc.toLocaleString('en-IN');
+    document.getElementById('stat-neucoins-pct').textContent = 'NeuCoins with bank';
+  } else {
+    document.getElementById('stat-neucoins').textContent = '—';
+    document.getElementById('stat-neucoins-pct').textContent = 'not in statement';
+  }
+
+  // KRI: Reward Rate = (NeuCoins / Total Spend) × 100
+  const rewardRate = (nc > 0 && total > 0) ? ((nc / total) * 100) : null;
+  if (rewardRate !== null) {
+    document.getElementById('stat-reward-rate').textContent = rewardRate.toFixed(2);
+    document.getElementById('stat-reward-rate-sub').textContent = 'NeuCoins per ₹100 spent';
+  } else {
+    document.getElementById('stat-reward-rate').textContent = '—';
+    document.getElementById('stat-reward-rate-sub').textContent = 'NeuCoins data unavailable';
+  }
+
+  // Top category
+  const catTotals = {};
+  debits.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+  const topCat = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0];
+  if (topCat) {
+    document.getElementById('stat-top-cat').textContent = (CATEGORIES[topCat[0]]?.icon || '') + ' ' + topCat[0];
+    document.getElementById('stat-top-cat-amt').textContent = fmt(topCat[1]);
+  }
+}
+
+function populateCatFilter(txns) {
+  const used = [...new Set(txns.map(t => t.category))];
+  const custom = getCustomCats();
+  const allCats = [...new Set([...used, ...Object.keys(CATEGORIES), ...custom])].sort();
+  const sel = document.getElementById('cat-filter');
+  sel.innerHTML = '<option value="">All Categories</option>';
+  allCats.forEach(cn => {
+    const o = document.createElement('option');
+    o.value = cn; o.textContent = (CATEGORIES[cn]?.icon || '📂') + ' ' + cn;
+    sel.appendChild(o);
+  });
+}
+
+function addCustomCategory() {
+  const modal = document.getElementById('add-cat-modal');
+  if (!modal) { console.error('add-cat-modal not found'); return; }
+  const inp = document.getElementById('add-cat-input');
+  inp.value = '';
+  // Wire Enter key once
+  inp.onkeydown = function(e) {
+    if (e.key === 'Enter') confirmAddCat();
+    if (e.key === 'Escape') closeAddCatModal();
+  };
+  renderCustomCatList();
+  modal.style.display = 'flex';
+  setTimeout(() => inp.focus(), 80);
+}
+
+function renderCustomCatList() {
+  const custom = getCustomCats();
+  const container = document.getElementById('custom-cat-list');
+  if (!custom.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);text-align:center;padding:8px 0">No custom categories yet</div>';
+    return;
+  }
+  container.innerHTML = '<div style="font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);margin-bottom:10px">Custom Categories</div>' +
+    custom.map(name => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:7px;background:var(--surface-2);margin-bottom:6px">
+        <span style="font-size:13px">📂 ${name}</span>
+        <button onclick="deleteCustomCat('${name.replace(/'/g,"\'")}') "
+          style="background:none;border:none;cursor:pointer;color:var(--ink-muted);font-size:13px;padding:0 4px;line-height:1"
+          title="Delete category">✕</button>
+      </div>`).join('');
+}
+
+function deleteCustomCat(name) {
+  let custom = getCustomCats().filter(c => c !== name);
+  saveCustomCats(custom);
+  delete CATEGORIES[name];
+  // Reassign any transactions using this category to Other
+  allTransactions.forEach(t => { if (t.category === name) t.category = 'Other'; });
+  populateCatFilter(allTransactions);
+  applyFilters();
+  renderCustomCatList();
+  showToast('Category "' + name + '" deleted');
+}
+
+function closeAddCatModal() {
+  const modal = document.getElementById('add-cat-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function confirmAddCat() {
+  const trimmed = (document.getElementById('add-cat-input').value || '').trim();
+  if (!trimmed) return;
+  if (getAllCategoryNames().some(e => e.toLowerCase() === trimmed.toLowerCase())) {
+    showToast('Category already exists');
+    return;
+  }
+  const custom = getCustomCats();
+  custom.push(trimmed);
+  saveCustomCats(custom);
+  CATEGORIES[trimmed] = { class: 'cat-other', icon: '📂', keywords: [] };
+  populateCatFilter(allTransactions);
+  applyFilters();
+  renderCustomCatList();
+  document.getElementById('add-cat-input').value = '';
+  showToast('Category "' + trimmed + '" added');
+}
+
+function fmt(n) {
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════════
+const CHART_PALETTE = ['#e8562a','#2a6ee8','#1a8a5a','#d97706','#9333ea','#0284c7','#c2410c','#7c3aed','#059669','#db2777'];
+
+function renderCharts(txns) {
+  const debits = txns.filter(t => t.type === 'debit');
+
+  // Destroy existing
+  Object.values(charts).forEach(c => c?.destroy());
+
+  // Category pie
+  const catTotals = {};
+  debits.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+  const catEntries = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
+
+  charts.category = new Chart(document.getElementById('chart-category'), {
+    type: 'doughnut',
+    data: {
+      labels: catEntries.map(([k]) => k),
+      datasets: [{ data: catEntries.map(([,v]) => v), backgroundColor: CHART_PALETTE, borderWidth: 2, borderColor: '#fff', hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { position: 'right', labels: { font: { family: 'Outfit', size: 11 }, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)} (${Math.round(ctx.raw/debits.reduce((s,t)=>s+t.amount,0)*100)}%)` } } },
+      onClick: (e, el) => {
+        if (el.length) {
+          const cat = catEntries[el[0].index][0];
+          openDrilldown(cat, debits.filter(t => t.category === cat));
+        }
+      }
+    }
+  });
+
+  // Merchant bar
+  const merchantTotals = {};
+  debits.forEach(t => { merchantTotals[t.label] = (merchantTotals[t.label] || 0) + t.amount; });
+  const topMerchants = Object.entries(merchantTotals).sort((a,b) => b[1]-a[1]).slice(0, 10);
+
+  charts.merchants = new Chart(document.getElementById('chart-merchants'), {
+    type: 'bar',
+    data: {
+      labels: topMerchants.map(([k]) => k.length > 18 ? k.slice(0,16)+'…' : k),
+      datasets: [{ data: topMerchants.map(([,v]) => v), backgroundColor: CHART_PALETTE, borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}` } } },
+      scales: { x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 10 }, callback: v => '₹'+Math.round(v/1000)+'k' } },
+        y: { grid: { display: false }, ticks: { font: { family: 'Outfit', size: 11 } } } },
+      onClick: (e, el) => {
+        if (el.length) {
+          const merchantLabel = topMerchants[el[0].index][0];
+          openDrilldown(merchantLabel, debits.filter(t => t.label === merchantLabel));
+        }
+      }
+    }
+  });
+
+  // Store debits for timeline toggling
+  window._timelineDebits = debits;
+  buildTimelineChart(debits, 'daily');
+}
+
+let _timelineView = 'daily';
+
+function setTimelineView(view) {
+  _timelineView = view;
+  const daily = document.getElementById('timeline-btn-daily');
+  const weekly = document.getElementById('timeline-btn-weekly');
+  if (view === 'daily') {
+    daily.style.background = 'var(--accent)'; daily.style.color = '#fff'; daily.style.fontWeight = '600';
+    weekly.style.background = 'transparent'; weekly.style.color = 'var(--ink-muted)'; weekly.style.fontWeight = '500';
+  } else {
+    weekly.style.background = 'var(--accent)'; weekly.style.color = '#fff'; weekly.style.fontWeight = '600';
+    daily.style.background = 'transparent'; daily.style.color = 'var(--ink-muted)'; daily.style.fontWeight = '500';
+  }
+  buildTimelineChart(window._timelineDebits || [], view);
+}
+
+function parseSortDate2(str) {
+  if (!str) return null;
+  const MMAP = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const m = str.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+  if (m) return new Date(parseInt(m[3]), MMAP[m[2]] ?? 0, parseInt(m[1]));
+  return null;
+}
+
+function getWeekKey(dateObj) {
+  // Week label: "Mon DD – Sun DD Mon"
+  const d = new Date(dateObj);
+  const day = d.getDay(); // 0=Sun
+  const diffToMon = (day === 0 ? -6 : 1 - day);
+  const mon = new Date(d); mon.setDate(d.getDate() + diffToMon);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${mon.getDate()} ${MONTHS[mon.getMonth()]} – ${sun.getDate()} ${MONTHS[sun.getMonth()]}`;
+}
+
+function buildTimelineChart(debits, view) {
+  const totals = {};
+  const keyToTxns = {};
+  const keyToDate = {}; // for sorting
+
+  debits.forEach(t => {
+    const dateObj = parseSortDate2(t.date);
+    const key = view === 'weekly' && dateObj ? getWeekKey(dateObj) : t.date;
+    const sortKey = dateObj ? dateObj.getTime() : 0;
+    totals[key] = (totals[key] || 0) + t.amount;
+    if (!keyToTxns[key]) { keyToTxns[key] = []; keyToDate[key] = sortKey; }
+    keyToTxns[key].push(t);
+    if (sortKey < keyToDate[key]) keyToDate[key] = sortKey; // use earliest date in week for sort
+  });
+
+  const entries = Object.entries(totals).sort(([a],[b]) => (keyToDate[a]||0) - (keyToDate[b]||0));
+
+  if (charts.timeline) { charts.timeline.destroy(); charts.timeline = null; }
+
+  charts.timeline = new Chart(document.getElementById('chart-timeline'), {
+    type: 'bar',
+    data: {
+      labels: entries.map(([k]) => k),
+      datasets: [{ data: entries.map(([,v]) => v), backgroundColor: 'rgba(42,110,232,0.15)', borderColor: '#2a6ee8', borderWidth: 2, borderRadius: 4, hoverBackgroundColor: 'rgba(42,110,232,0.3)' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}` } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 35 } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 10 }, callback: v => '₹'+Math.round(v/1000)+'k' } }
+      },
+      onClick: (e, el) => {
+        if (el.length) {
+          const key = entries[el[0].index][0];
+          const txnsForKey = keyToTxns[key] || [];
+          let durationLabel;
+          if (view === 'weekly') {
+            durationLabel = 'Duration: ' + key;
+          } else {
+            durationLabel = 'Duration: ' + key;
+          }
+          openDrilldown(durationLabel, txnsForKey, true);
+        }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE
+// ═══════════════════════════════════════════════════════════════
+let tableSearchVal = '', tableCatVal = '', tableTypeVal = '';
+
+function renderTable(txns) {
+  const body = document.getElementById('table-body');
+  body.innerHTML = '';
+  document.getElementById('table-count').textContent = txns.length + ' transactions';
+
+  txns.forEach(t => {
+    const tr = document.createElement('tr');
+    if (t.type === 'credit') tr.classList.add('row-credit');
+    tr.innerHTML = `
+      <td class="td-date">${t.date || '—'}</td>
+      <td class="td-time">${t.time || '—'}</td>
+      <td class="td-merchant">
+        <div class="edit-inline" id="merchant-cell-${t.id}">
+          <span>${t.label}</span>
+          <button class="edit-btn" onclick="startEdit(${t.id}, 'label')" title="Edit label">✏️</button>
+        </div>
+      </td>
+      <td class="td-raw" title="${t.raw}">${t.raw}</td>
+      <td>
+        <div class="edit-inline" id="cat-cell-${t.id}">
+          <span class="cat-pill ${getCatClass(t.category)}">${getCatIcon(t.category)} ${t.category}</span>
+          <button class="edit-btn" onclick="startEdit(${t.id}, 'category')" title="Edit category">✏️</button>
+        </div>
+      </td>
+      <td class="td-amount td-${t.type}">${t.type === 'debit' ? '−' : '+'}${fmt(t.amount)}</td>
+      <td class="td-neucoins">${t.neuCoins > 0 ? '<span class="neucoins-badge">+' + t.neuCoins + '</span>' : '<span style="color:var(--ink-muted);font-size:11px">—</span>'}</td>
+      <td>${t.isUPI ? '<span title="UPI transaction" class="flag-icon">📱</span>' : ''}${t.isReward ? '<span title="Reward/Cashback" class="flag-icon">✦</span>' : ''}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+function getCatClass(cat) {
+  if (!cat) return 'cat-other';
+  const map = {
+    'Food & Dining': 'cat-food', 'Travel': 'cat-travel', 'Shopping': 'cat-shopping',
+    'Entertainment': 'cat-entertainment', 'Health & Medical': 'cat-health',
+    'Utilities': 'cat-utilities', 'Fuel': 'cat-fuel', 'Finance': 'cat-finance',
+    'UPI': 'cat-upi', 'Rewards': 'cat-rewards', 'Other': 'cat-other'
+  };
+  return map[cat] || 'cat-other';
+}
+
+function getCatIcon(cat) {
+  return CATEGORIES[cat]?.icon || '📦';
+}
+
+function startEdit(id, field) {
+  const t = allTransactions.find(x => x.id === id);
+  if (!t) return;
+
+  if (field === 'label') {
+    const cell = document.getElementById('merchant-cell-' + id);
+    cell.innerHTML = `<input class="inline-edit-input" id="edit-input-${id}" value="${t.label}" onblur="commitEdit(${id},'label')" onkeydown="if(event.key==='Enter')commitEdit(${id},'label');if(event.key==='Escape')cancelEdit(${id},'label')">`;
+    document.getElementById('edit-input-' + id)?.focus();
+  } else {
+    const cell = document.getElementById('cat-cell-' + id);
+    const catOptions = getAllCategoryNames().map(cn => `<option value="${cn}" ${cn===t.category?'selected':''}>${cn}</option>`).join('');
+    cell.innerHTML = `<select class="inline-edit-input" id="edit-input-${id}" onchange="commitEdit(${id},'category')" onblur="commitEdit(${id},'category')">${catOptions}</select>`;
+    document.getElementById('edit-input-' + id)?.focus();
+  }
+}
+
+function commitEdit(id, field) {
+  const input = document.getElementById('edit-input-' + id);
+  if (!input) return;
+  const t = allTransactions.find(x => x.id === id);
+  if (!t) return;
+  const newVal = input.value.trim();
+  if (!newVal) return;
+
+  t[field] = newVal;
+  // Propagate same raw → same label/category across all transactions
+  allTransactions.forEach(tx => {
+    if (tx.raw === t.raw) {
+      tx.label    = t.label;
+      tx.category = t.category;
+    }
+  });
+  addRemapping(t.raw, t.label, t.category);
+  // Full re-render so charts + widgets update
+  filteredTransactions = allTransactions.filter(tx => filteredTransactions.some(f => f.id === tx.id));
+  renderCharts(allTransactions);
+  applyFilters();
+  renderUPI(allTransactions);
+  renderAnomalies(allTransactions);
+  renderRewards(allTransactions, window._lastMeta || {});
+  showToast('Updated — dashboard refreshed');
+}
+
+function cancelEdit(id, field) {
+  const t = allTransactions.find(x => x.id === id);
+  if (t) reRenderCell(t, field);
+}
+
+function reRenderCell(t, field) {
+  if (field === 'label') {
+    document.getElementById('merchant-cell-' + t.id).innerHTML = `
+      <span>${t.label}</span>
+      <button class="edit-btn" onclick="startEdit(${t.id},'label')" title="Edit label">✏️</button>`;
+  } else {
+    document.getElementById('cat-cell-' + t.id).innerHTML = `
+      <span class="cat-pill ${getCatClass(t.category)}">${getCatIcon(t.category)} ${t.category}</span>
+      <button class="edit-btn" onclick="startEdit(${t.id},'category')" title="Edit category">✏️</button>`;
+  }
+}
+
+function filterTable(val) {
+  tableSearchVal = val.toLowerCase();
+  applyFilters();
+}
+
+function filterByCategory(val) {
+  tableCatVal = val;
+  applyFilters();
+}
+
+function filterByType(val) {
+  tableTypeVal = val;
+  applyFilters();
+}
+
+function applyFilters() {
+  filteredTransactions = allTransactions.filter(t => {
+    const matchSearch = !tableSearchVal ||
+      t.label.toLowerCase().includes(tableSearchVal) ||
+      t.raw.toLowerCase().includes(tableSearchVal) ||
+      t.category.toLowerCase().includes(tableSearchVal) ||
+      String(t.amount).includes(tableSearchVal);
+    const matchCat = !tableCatVal || t.category === tableCatVal;
+    const matchType = !tableTypeVal || t.type === tableTypeVal;
+    return matchSearch && matchCat && matchType;
+  });
+  renderTable(filteredTransactions);
+}
+
+const MONTH_IDX = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+function parseSortDate(str) {
+  // "19 Jan 2026" → comparable timestamp
+  if (!str) return 0;
+  const m = str.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+  if (m) return new Date(parseInt(m[3]), MONTH_IDX[m[2]] ?? 0, parseInt(m[1])).getTime();
+  return new Date(str).getTime() || 0;
+}
+function sortTable(col) {
+  if (sortState.col === col) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+  else { sortState.col = col; sortState.dir = 'asc'; }
+  filteredTransactions.sort((a, b) => {
+    let av, bv;
+    if (col === 'amount') { av = a.amount; bv = b.amount; }
+    else if (col === 'date') { av = parseSortDate(a.date); bv = parseSortDate(b.date); }
+    else { av = a[col] || ''; bv = b[col] || ''; }
+    if (av < bv) return sortState.dir === 'asc' ? -1 : 1;
+    if (av > bv) return sortState.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  renderTable(filteredTransactions);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UPI WIDGET
+// ═══════════════════════════════════════════════════════════════
+function renderUPI(txns) {
+  const upis = txns.filter(t => t.isUPI && t.type === 'debit');
+  const total = upis.reduce((s,t) => s + t.amount, 0);
+  const avg = upis.length ? total / upis.length : 0;
+
+  document.getElementById('upi-count-badge').textContent = upis.length;
+  document.getElementById('upi-total').textContent = fmt(total);
+  document.getElementById('upi-count').textContent = upis.length;
+  document.getElementById('upi-avg').textContent = fmt(avg);
+
+  const list = document.getElementById('upi-list');
+  if (!upis.length) {
+    list.innerHTML = '<li class="mini-list-item" style="justify-content:center;color:var(--ink-muted)">No UPI transactions found</li>';
+    return;
+  }
+
+  // Top UPI payees
+  const payeeTotals = {};
+  upis.forEach(t => { payeeTotals[t.label] = (payeeTotals[t.label] || 0) + t.amount; });
+  const top = Object.entries(payeeTotals).sort((a,b) => b[1]-a[1]).slice(0, 8);
+
+  document.getElementById('upi-payee-count').textContent = top.length;
+
+  // Build payee → transactions map for drilldown
+  const payeeTxnMap = {};
+  upis.forEach(t => {
+    if (!payeeTxnMap[t.label]) payeeTxnMap[t.label] = [];
+    payeeTxnMap[t.label].push(t);
+  });
+
+  list.innerHTML = '';
+  top.forEach(([label, amt]) => {
+    const count = payeeTxnMap[label]?.length || 1;
+    const li = document.createElement('li');
+    li.className = 'mini-list-item mini-list-clickable';
+    li.innerHTML = `<span class="mini-list-name">&#128241; ${label}</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono)">${count}&times;</span>
+        <span class="mini-list-amt">${fmt(amt)}</span>
+        <span style="color:var(--ink-muted);font-size:11px">&#8250;</span>
+      </span>`;
+    li.addEventListener('click', () => openUPIDrilldown(label));
+    list.appendChild(li);
+  });
+
+  // Store for drilldown access
+  window._upiPayeeTxnMap = payeeTxnMap;
+}
+
+function openUPIDrilldown(label) {
+  const txns = (window._upiPayeeTxnMap || {})[label] || [];
+  const totalAmt = txns.reduce((s,t) => s + t.amount, 0);
+  openDrilldown('📱 ' + label, txns, true);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANOMALIES
+// ═══════════════════════════════════════════════════════════════
+function renderAnomalies(txns) {
+  const debits = txns.filter(t => t.type === 'debit');
+  if (!debits.length) return;
+
+  const avg = debits.reduce((s,t) => s + t.amount, 0) / debits.length;
+  const threshold = avg * 3;
+  const anomalies = debits.filter(t => t.amount > threshold).sort((a,b) => b.amount - a.amount).slice(0, 5);
+
+  document.getElementById('anomaly-count-badge').textContent = anomalies.length;
+
+  const container = document.getElementById('anomaly-list');
+  if (!anomalies.length) {
+    container.innerHTML = '<div class="empty-state" style="padding:30px 12px"><div class="es-icon">✅</div><h4>All clear</h4><p>No unusual transactions detected</p></div>';
+    return;
+  }
+
+  container.innerHTML = anomalies.map(t => `
+    <div class="anomaly-item">
+      <div class="anomaly-icon">⚠️</div>
+      <div class="anomaly-body">
+        <div class="anomaly-merchant">${t.label}</div>
+        <div class="anomaly-reason">${(t.amount / avg).toFixed(1)}× your average spend · ${t.date} ${t.time}</div>
+      </div>
+      <div class="anomaly-amt">${fmt(t.amount)}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REWARDS
+// ═══════════════════════════════════════════════════════════════
+function mapProgramToTransactions(program, txns) {
+  const name = program.toLowerCase();
+  const lbl = l => (l || '').toLowerCase();
+  const debits = txns.filter(t => t.type === 'debit');
+
+  if (name.includes('titan') || name.includes('tanishq')) {
+    const matched = debits.filter(t =>
+      lbl(t.label).includes('titan') || lbl(t.label).includes('tanishq') ||
+      lbl(t.raw).includes('titan') || lbl(t.raw).includes('tanishq')
+    );
+    return { matched, rate: 0.035, rateLabel: '3.5% additional', note: 'Tata brand accelerated NeuCoins' };
+  }
+
+  if (name.includes('tatapay') || name.includes('tata_pay') || name.includes('tatapayment') || name.includes('tata pay')) {
+    const matched = debits.filter(t =>
+      lbl(t.label).includes('tata pay') || lbl(t.label).includes('tatapay') ||
+      lbl(t.raw).includes('tata pay') || lbl(t.raw).includes('tatapay')
+    );
+    return { matched, rate: 0.035, rateLabel: '3.5% additional', note: 'Tata Pay accelerated NeuCoins' };
+  }
+
+  if (name.includes('bigbasket') || name.includes('big_basket')) {
+    const matched = debits.filter(t =>
+      lbl(t.label).includes('bigbasket') || lbl(t.label).includes('big basket') ||
+      lbl(t.raw).includes('bigbasket') || lbl(t.raw).includes('big basket')
+    );
+    return { matched, rate: 0.035, rateLabel: '3.5% additional', note: 'BigBasket accelerated NeuCoins' };
+  }
+
+  if (name.startsWith('base_grocery') || name === 'base_grocery') {
+    const matched = debits.filter(t =>
+      t.category === 'Groceries' &&
+      !lbl(t.label).includes('upi') && !lbl(t.raw).includes('upi')
+    );
+    return { matched, rate: 0.015, rateLabel: '1.5% base', note: 'Grocery base NeuCoins (capped 2,000/mo)' };
+  }
+
+  if (name.includes('telecom')) {
+    const matched = debits.filter(t =>
+      t.category === 'Telecom' ||
+      lbl(t.label).includes('airtel') || lbl(t.label).includes('jio') ||
+      lbl(t.label).includes('bsnl') || lbl(t.label).includes('tata play') ||
+      lbl(t.raw).includes('telecom') || lbl(t.raw).includes('postpaid') ||
+      lbl(t.raw).includes('prepaid recharge')
+    );
+    return { matched, rate: 0.015, rateLabel: '1.5% base', note: 'Telecom & Cable NeuCoins (capped 2,000/mo)' };
+  }
+
+  if (name.includes('utility')) {
+    const matched = debits.filter(t =>
+      t.category === 'Utilities' ||
+      lbl(t.label).includes('electricity') || lbl(t.label).includes('bescom') ||
+      lbl(t.label).includes('tneb') || lbl(t.label).includes('water board') ||
+      lbl(t.label).includes('gas') || lbl(t.raw).includes('utility')
+    );
+    return { matched, rate: 0.015, rateLabel: '1.5% base', note: 'Utility NeuCoins (capped 2,000/mo)' };
+  }
+
+  if (name.includes('upi')) {
+    const matched = debits.filter(t =>
+      t.category === 'UPI' ||
+      lbl(t.label).includes('upi') || lbl(t.raw).includes('upi') ||
+      (t.raw && t.raw.includes('@'))
+    );
+    return { matched, rate: 0.005, rateLabel: '0.5% base', note: 'UPI NeuCoins via any UPI ID (capped 500/mo)' };
+  }
+
+  if (name.includes('retail') || name.includes('greater') || name.includes('50k')) {
+    return { matched: [], rate: 0, rateLabel: 'Milestone bonus', note: 'Spend milestone bonus — not tied to individual transactions' };
+  }
+
+  // Fallback — keyword match on program name
+  const keyword = program.replace(/^(add_|base_|neucoins_on_)/i, '').replace(/_/g, ' ').toLowerCase();
+  const matched = debits.filter(t =>
+    lbl(t.label).includes(keyword) || lbl(t.raw).includes(keyword)
+  );
+  return { matched, rate: 0.015, rateLabel: '1.5%', note: 'Matched by program name' };
+}
+
+function renderRewards(txns, meta) {
+  const card = document.getElementById('rewards-card');
+  const programs = (meta && meta.rewardPrograms) ? meta.rewardPrograms : [];
+  const total = (meta && meta.rewardProgramTotal) ? meta.rewardProgramTotal : 0;
+
+  if (!programs.length) { card.style.display = 'none'; return; }
+
+  card.style.display = 'block';
+  document.getElementById('rewards-total-badge').textContent = total.toLocaleString('en-IN') + ' bonus pts this cycle';
+
+  const wrap = document.getElementById('rewards-program-table');
+  const maxPts = Math.max(...programs.map(p => p.points));
+  const mapped = programs.map(p => ({ ...p, mapping: mapProgramToTransactions(p.program, txns) }));
+
+  wrap.innerHTML = mapped.map((p, i) => {
+    const { matched, rate, rateLabel, note } = p.mapping;
+    const estTotal = matched.reduce((s, t) => s + t.amount, 0);
+    const estPts = Math.floor(estTotal * rate);
+    const barW = Math.round((p.points / maxPts) * 100);
+    const hasTxns = matched.length > 0;
+    const rowId = 'rp-row-' + i;
+    const bg = i % 2 === 0 ? '#fff' : 'var(--surface-2)';
+
+    return [
+      '<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">',
+        '<div onclick="toggleRewardRow(\'' + rowId + '\')" style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 16px;cursor:' + (hasTxns ? 'pointer' : 'default') + ';background:' + bg + '">',
+          '<div>',
+            '<div style="font-weight:600;font-size:13px;color:var(--ink)">' + p.program + '</div>',
+            '<div style="font-size:11px;color:var(--ink-muted);margin-top:2px">' + note + '</div>',
+            '<div style="margin-top:6px;height:3px;border-radius:2px;background:var(--border);width:100%">',
+              '<div style="height:3px;border-radius:2px;background:var(--accent);width:' + barW + '%"></div>',
+            '</div>',
+          '</div>',
+          '<div style="text-align:right;min-width:80px">',
+            '<div style="font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--accent)">' + p.points.toLocaleString('en-IN') + '</div>',
+            '<div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono)">pts earned</div>',
+          '</div>',
+          '<div style="font-size:18px;color:var(--ink-muted);width:20px;text-align:center">' + (hasTxns ? '\u203a' : '\u2013') + '</div>',
+        '</div>',
+        '<div id="' + rowId + '" style="display:none;border-top:1px solid var(--border)">',
+          hasTxns ? [
+            '<div style="padding:8px 16px;background:var(--surface-2);display:flex;justify-content:space-between;align-items:center">',
+              '<div style="font-size:11px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.06em">' +
+                matched.length + ' transaction' + (matched.length !== 1 ? 's' : '') + ' \u00b7 ' + rateLabel + ' \u00b7 Est. ' + estPts.toLocaleString('en-IN') + ' pts' +
+              '</div>',
+              '<div style="font-size:10px;color:var(--ink-muted);font-style:italic">Estimate — actual calc uses HDFC merchant IDs</div>',
+            '</div>',
+            matched.map(t =>
+              '<div style="display:grid;grid-template-columns:90px 1fr auto;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);font-size:12px">' +
+                '<div style="font-family:var(--font-mono);color:var(--ink-muted)">' + (t.date || '') + '</div>' +
+                '<div style="font-weight:500;color:var(--ink)">' + t.label + '</div>' +
+                '<div style="font-family:var(--font-mono);color:var(--ink);text-align:right">\u2212' + fmt(t.amount) + '</div>' +
+              '</div>'
+            ).join(''),
+            '<div style="padding:8px 16px;display:flex;justify-content:space-between;background:rgba(234,88,12,0.04)">',
+              '<div style="font-size:12px;font-weight:600;color:var(--ink)">Matched spend</div>',
+              '<div style="font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--accent)">' + fmt(estTotal) + '</div>',
+            '</div>'
+          ].join('') : '<div style="padding:12px 16px;font-size:12px;color:var(--ink-muted);font-style:italic">' + note + '</div>',
+        '</div>',
+      '</div>'
+    ].join('');
+  }).join('') +
+  '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);margin-top:4px">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--ink)">Total Bonus NeuCoins This Cycle</div>' +
+    '<div style="font-family:var(--font-mono);font-weight:700;font-size:16px;color:var(--accent)">' + total.toLocaleString('en-IN') + '</div>' +
+  '</div>' +
+  '<div style="margin-top:8px;font-size:10px;color:var(--ink-muted);font-style:italic;text-align:right">Bonus NeuCoins only. Base NeuCoins (1.5% on all eligible spends) are tracked separately in your Total NeuCoins stat card.</div>';
+}
+
+function toggleRewardRow(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const chevron = el.previousElementSibling ? el.previousElementSibling.querySelector('div:last-child') : null;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    if (chevron) chevron.textContent = '\u02c5';
+  } else {
+    el.style.display = 'none';
+    if (chevron) chevron.textContent = '\u203a';
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// DRILLDOWN MODAL
+// ═══════════════════════════════════════════════════════════════
+// DRILLDOWN MODAL
+// ═══════════════════════════════════════════════════════════════
+function openDrilldown(title, txns, hideCount) {
+  document.getElementById('modal-title').textContent = title;
+  const body = document.getElementById('modal-body');
+
+  if (!txns.length) {
+    body.innerHTML = '<div class="empty-state"><div class="es-icon">🔍</div><p>No transactions found</p></div>';
+  } else {
+    const total = txns.reduce((s,t) => s+t.amount, 0);
+    body.innerHTML = `
+      <div style="display:flex;gap:16px;margin-bottom:16px">
+        <div style="background:var(--surface-2);border-radius:10px;padding:12px 16px;flex:1;text-align:center">
+          <div style="font-family:var(--font-display);font-size:24px">${fmt(total)}</div>
+          <div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase">Total</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:10px;padding:12px 16px;flex:1;text-align:center">
+          <div style="font-family:var(--font-display);font-size:24px">${txns.length}</div>
+          <div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase">Transactions</div>
+        </div>
+        <div style="background:var(--surface-2);border-radius:10px;padding:12px 16px;flex:1;text-align:center">
+          <div style="font-family:var(--font-display);font-size:24px">${fmt(total/txns.length)}</div>
+          <div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase">Average</div>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Merchant</th><th>Category</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+        <tbody>
+          ${[...txns].sort((a,b) => b.amount - a.amount).map(t => `
+            <tr id="dd-row-${t.id}">
+              <td class="td-date">${t.date||'—'}</td>
+              <td class="td-merchant">
+                <div class="edit-inline" id="dd-merchant-${t.id}">
+                  <span>${t.label}</span>
+                  <button class="edit-btn" onclick="ddStartEdit(${t.id},'label')" title="Edit label">✏️</button>
+                </div>
+              </td>
+              <td>
+                <div class="edit-inline" id="dd-cat-${t.id}">
+                  <span class="cat-pill ${getCatClass(t.category)}">${getCatIcon(t.category)} ${t.category}</span>
+                  <button class="edit-btn" onclick="ddStartEdit(${t.id},'category')" title="Edit category">✏️</button>
+                </div>
+              </td>
+              <td class="td-amount td-${t.type}">${t.type==='credit'?'+':'−'}${fmt(t.amount)}</td>
+              <td>${t.isUPI?'<span class="flag-icon" title="UPI">📱</span>':''}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+function ddStartEdit(id, field) {
+  const t = allTransactions.find(x => x.id === id);
+  if (!t) return;
+  if (field === 'label') {
+    document.getElementById('dd-merchant-' + id).innerHTML =
+      `<input class="inline-edit-input" id="dd-inp-${id}" value="${t.label}"
+        onblur="ddCommit(${id},'label')"
+        onkeydown="if(event.key==='Enter')ddCommit(${id},'label');if(event.key==='Escape')ddCancel(${id},'label')">`;
+    document.getElementById('dd-inp-' + id)?.focus();
+  } else {
+    const opts = getAllCategoryNames().map(cn => `<option value="${cn}"${cn===t.category?' selected':''}>${cn}</option>`).join('');
+    document.getElementById('dd-cat-' + id).innerHTML =
+      `<select class="inline-edit-input" id="dd-inp-${id}"
+        onchange="ddCommit(${id},'category')"
+        onblur="ddCommit(${id},'category')">${opts}</select>`;
+    document.getElementById('dd-inp-' + id)?.focus();
+  }
+}
+
+function ddCommit(id, field) {
+  const input = document.getElementById('dd-inp-' + id);
+  if (!input) return;
+  const t = allTransactions.find(x => x.id === id);
+  if (!t) return;
+  const newVal = input.value.trim();
+  if (!newVal) { ddCancel(id, field); return; }
+  t[field] = newVal;
+  allTransactions.forEach(tx => { if (tx.raw === t.raw) { tx.label = t.label; tx.category = t.category; } });
+  addRemapping(t.raw, t.label, t.category);
+  ddRenderCell(t, field);
+  // Refresh background dashboard
+  renderCharts(allTransactions);
+  applyFilters();
+  renderUPI(allTransactions);
+  renderAnomalies(allTransactions);
+  showToast('Updated across all views');
+}
+
+function ddCancel(id, field) {
+  const t = allTransactions.find(x => x.id === id);
+  if (t) ddRenderCell(t, field);
+}
+
+function ddRenderCell(t, field) {
+  if (field === 'label') {
+    document.getElementById('dd-merchant-' + t.id).innerHTML =
+      `<span>${t.label}</span><button class="edit-btn" onclick="ddStartEdit(${t.id},'label')" title="Edit label">✏️</button>`;
+  } else {
+    document.getElementById('dd-cat-' + t.id).innerHTML =
+      `<span class="cat-pill ${getCatClass(t.category)}">${getCatIcon(t.category)} ${t.category}</span>
+       <button class="edit-btn" onclick="ddStartEdit(${t.id},'category')" title="Edit category">✏️</button>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FOOTER LOG
+// ═══════════════════════════════════════════════════════════════
+function toggleFooter() {
+  document.getElementById('footer-bar').classList.toggle('open');
+}
+
+function renderFooterLog() {
+  const map = getMerchantMap();
+  const body = document.getElementById('log-body');
+  body.innerHTML = map.map(m => `
+    <tr>
+      <td>${m.raw.length > 30 ? m.raw.slice(0,28)+'…' : m.raw}</td>
+      <td>${m.label}</td>
+      <td>${m.category}</td>
+      <td>${m.created_at ? new Date(m.created_at).toLocaleDateString('en-IN') : '—'}</td>
+    </tr>`).join('');
+  document.getElementById('footer-toolbar-label').textContent = map.length + ' remapping' + (map.length !== 1 ? 's' : '') + ' stored';
+}
+
+function updateFooterCount() {
+  document.getElementById('footer-count').textContent = getMerchantMap().length;
+}
+
+function copyMappingLog() {
+  const map = getMerchantMap();
+  if (!map.length) { showToast('No mappings to copy'); return; }
+  const text = 'STATENTSENSE MERCHANT MAPPING LOG\n' +
+    '='.repeat(50) + '\n' +
+    'Raw Merchant String → Label → Category\n' +
+    '='.repeat(50) + '\n\n' +
+    map.map(m => `${m.raw}\n  → Label: ${m.label}\n  → Category: ${m.category}\n  → Added: ${m.created_at||'—'}`).join('\n\n');
+  navigator.clipboard.writeText(text).then(() => showToast('Copied! Paste to send for baking 🍞'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPARISON TAB
+// ═══════════════════════════════════════════════════════════════
+let pendingCompSlot = -1;
+document.getElementById('comp-file-input').addEventListener('change', e => {
+  if (e.target.files[0] && pendingCompSlot >= 0) {
+    loadFile(e.target.files[0], String(pendingCompSlot));
+    e.target.value = '';
+  }
+});
+
+function triggerCompUpload(idx) {
+  pendingCompSlot = idx;
+  document.getElementById('comp-file-input').click();
+}
+
+function renderCompSlot(idx, filename, txns) {
+  const slot = document.getElementById('comp-slot-' + idx);
+  slot.classList.add('loaded');
+  slot.querySelector('.comp-slot-num').textContent = '✓';
+  slot.querySelector('h4').textContent = filename.length > 24 ? filename.slice(0,22)+'…' : filename;
+  slot.querySelector('p').textContent = txns.length + ' transactions · ' + fmt(txns.filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0));
+}
+
+function renderCompTables() {
+  const container = document.getElementById('comp-tables');
+  const empty = document.getElementById('comp-empty');
+  const loaded = compStatements.filter(Boolean);
+  if (!loaded.length) { empty.style.display = 'block'; container.innerHTML = ''; return; }
+  empty.style.display = 'none';
+
+  container.innerHTML = loaded.map(s => `
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <span style="font-size:13px;font-weight:600;color:var(--ink)">${s.filename}</span>
+        <span class="table-count">${s.transactions.length} transactions · ${fmt(s.transactions.filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0))}</span>
+      </div>
+      <div style="overflow-x:auto;max-height:380px;overflow-y:auto">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Time</th><th>Merchant</th><th>Category</th><th style="text-align:right">Amount</th></tr></thead>
+          <tbody>
+            ${s.transactions.slice(0,50).map(t => `<tr>
+              <td class="td-date">${t.date||'—'}</td>
+              <td class="td-time">${t.time||'—'}</td>
+              <td class="td-merchant">${t.label}</td>
+              <td><span class="cat-pill ${getCatClass(t.category)}">${getCatIcon(t.category)} ${t.category}</span></td>
+              <td class="td-amount ${t.type}">${fmt(t.amount)}</td>
+            </tr>`).join('')}
+            ${s.transactions.length > 50 ? `<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--ink-muted);font-size:12px">+${s.transactions.length-50} more transactions</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SAMPLE DATA
+// ═══════════════════════════════════════════════════════════════
+function loadSampleData() {
+  const SAMPLE = [
+    { id:101, date:'01 Jan 2025', time:'9:14 AM',  raw:'SWIGGY*ORDER8821',         label:'Swiggy',           category:'Food & Dining',    amount:648,   type:'debit',  isUPI:false, isReward:false },
+    { id:102, date:'02 Jan 2025', time:'1:32 PM',  raw:'AMAZON PAY*IN*AB12',       label:'Amazon',           category:'Shopping',         amount:1299,  type:'debit',  isUPI:false, isReward:false },
+    { id:103, date:'02 Jan 2025', time:'7:55 PM',  raw:'UPI/PHONEPE/ZOMATO',       label:'Zomato via UPI',   category:'Food & Dining',    amount:420,   type:'debit',  isUPI:true,  isReward:false },
+    { id:104, date:'03 Jan 2025', time:'11:02 AM', raw:'NETFLIX.COM',              label:'Netflix',          category:'Entertainment',    amount:649,   type:'debit',  isUPI:false, isReward:false },
+    { id:105, date:'04 Jan 2025', time:'8:47 AM',  raw:'BPCL FUEL STATION',        label:'BPCL Petrol',      category:'Fuel',             amount:2800,  type:'debit',  isUPI:false, isReward:false },
+    { id:106, date:'05 Jan 2025', time:'3:21 PM',  raw:'MYNTRA DESIGNS',           label:'Myntra',           category:'Shopping',         amount:3499,  type:'debit',  isUPI:false, isReward:false },
+    { id:107, date:'06 Jan 2025', time:'6:10 PM',  raw:'UPI/GPAY/KIRANASTORE',     label:'Local Kirana UPI', category:'Food & Dining',    amount:185,   type:'debit',  isUPI:true,  isReward:false },
+    { id:108, date:'07 Jan 2025', time:'10:30 AM', raw:'IRCTC RAIL BOOKING',       label:'IRCTC',            category:'Travel',           amount:1840,  type:'debit',  isUPI:false, isReward:false },
+    { id:109, date:'08 Jan 2025', time:'2:15 PM',  raw:'APOLLO PHARMACY',          label:'Apollo Pharmacy',  category:'Health & Medical', amount:760,   type:'debit',  isUPI:false, isReward:false },
+    { id:110, date:'09 Jan 2025', time:'9:00 AM',  raw:'JIO RECHARGE*001',         label:'Jio Recharge',     category:'Utilities',        amount:299,   type:'debit',  isUPI:false, isReward:false },
+    { id:111, date:'10 Jan 2025', time:'8:22 PM',  raw:'SWIGGY*ORDER9900',         label:'Swiggy',           category:'Food & Dining',    amount:512,   type:'debit',  isUPI:false, isReward:false },
+    { id:112, date:'11 Jan 2025', time:'11:40 AM', raw:'BOOKMYSHOW',               label:'BookMyShow',       category:'Entertainment',    amount:890,   type:'debit',  isUPI:false, isReward:false },
+    { id:113, date:'12 Jan 2025', time:'4:05 PM',  raw:'UPI/PAYTM/AUTODRIVER',    label:'Auto via UPI',     category:'Travel',           amount:120,   type:'debit',  isUPI:true,  isReward:false },
+    { id:114, date:'13 Jan 2025', time:'1:00 PM',  raw:'FLIPKART INTERNET',        label:'Flipkart',         category:'Shopping',         amount:5999,  type:'debit',  isUPI:false, isReward:false },
+    { id:115, date:'13 Jan 2025', time:'3:45 PM',  raw:'UPI/BHIM/SALON*PAY',      label:'Salon via UPI',    category:'Health & Medical', amount:450,   type:'debit',  isUPI:true,  isReward:false },
+    { id:116, date:'14 Jan 2025', time:'7:30 PM',  raw:'ZOMATO ORDER*XYZ',        label:'Zomato',           category:'Food & Dining',    amount:738,   type:'debit',  isUPI:false, isReward:false },
+    { id:117, date:'15 Jan 2025', time:'10:15 AM', raw:'HDFC LIFE PREMIUM',       label:'HDFC Life',        category:'Finance',          amount:4200,  type:'debit',  isUPI:false, isReward:false },
+    { id:118, date:'16 Jan 2025', time:'6:00 PM',  raw:'SPOTIFY INDIA',           label:'Spotify',          category:'Entertainment',    amount:119,   type:'debit',  isUPI:false, isReward:false },
+    { id:119, date:'17 Jan 2025', time:'9:50 AM',  raw:'AMAZON PAY*IN*CD34',      label:'Amazon',           category:'Shopping',         amount:18500, type:'debit',  isUPI:false, isReward:false },
+    { id:120, date:'18 Jan 2025', time:'1:20 PM',  raw:'UPI/GPAY/RESTAURANT01',   label:'Restaurant UPI',   category:'Food & Dining',    amount:680,   type:'debit',  isUPI:true,  isReward:false },
+    { id:121, date:'19 Jan 2025', time:'5:35 PM',  raw:'OLA CABS*TRIP',           label:'Ola',              category:'Travel',           amount:340,   type:'debit',  isUPI:false, isReward:false },
+    { id:122, date:'20 Jan 2025', time:'8:10 AM',  raw:'D MART RETAIL',           label:'D-Mart',           category:'Shopping',         amount:2340,  type:'debit',  isUPI:false, isReward:false },
+    { id:123, date:'21 Jan 2025', time:'11:55 AM', raw:'HOTSTAR PREMIUM',         label:'Disney+ Hotstar',  category:'Entertainment',    amount:299,   type:'debit',  isUPI:false, isReward:false },
+    { id:124, date:'22 Jan 2025', time:'3:10 PM',  raw:'MEDPLUS PHARMACY',        label:'Medplus',          category:'Health & Medical', amount:1240,  type:'debit',  isUPI:false, isReward:false },
+    { id:125, date:'23 Jan 2025', time:'7:00 PM',  raw:'SWIGGY*INSTAMART',        label:'Swiggy Instamart', category:'Food & Dining',    amount:890,   type:'debit',  isUPI:false, isReward:false },
+    { id:126, date:'24 Jan 2025', time:'2:40 PM',  raw:'TATA NEU CASHBACK',       label:'TataNeu Cashback', category:'Rewards',          amount:320,   type:'credit', isUPI:false, isReward:true },
+    { id:127, date:'25 Jan 2025', time:'9:00 AM',  raw:'BPCL FUEL STATION 2',     label:'BPCL Petrol',      category:'Fuel',             amount:3100,  type:'debit',  isUPI:false, isReward:false },
+    { id:128, date:'26 Jan 2025', time:'6:45 PM',  raw:'UPI/PHONEPE/ELECTRICIAN', label:'Electrician UPI',  category:'Utilities',        amount:800,   type:'debit',  isUPI:true,  isReward:false },
+    { id:129, date:'27 Jan 2025', time:'12:00 PM', raw:'MAKEMYTRIP FLIGHT',       label:'MakeMyTrip',       category:'Travel',           amount:12400, type:'debit',  isUPI:false, isReward:false },
+    { id:130, date:'28 Jan 2025', time:'4:30 PM',  raw:'NEUCOINS CREDIT',         label:'NeuCoins',         category:'Rewards',          amount:150,   type:'credit', isUPI:false, isReward:true },
+    { id:131, date:'29 Jan 2025', time:'8:55 AM',  raw:'AIRTEL BROADBAND',        label:'Airtel Broadband', category:'Utilities',        amount:999,   type:'debit',  isUPI:false, isReward:false },
+    { id:132, date:'30 Jan 2025', time:'7:20 PM',  raw:'SWIGGY*ORDER1234',        label:'Swiggy',           category:'Food & Dining',    amount:475,   type:'debit',  isUPI:false, isReward:false },
+    { id:133, date:'31 Jan 2025', time:'11:30 AM', raw:'AMAZON PAY*IN*EF56',      label:'Amazon',           category:'Shopping',         amount:3200,  type:'debit',  isUPI:false, isReward:false },
+  ];
+
+  allTransactions = SAMPLE;
+  filteredTransactions = [...SAMPLE];
+  initApp(SAMPLE, { name: 'Rahul Sharma', card: '4123456789001234' });
+}
+
+function closeSampleModal(e) {
+  if (!e || e.target === document.getElementById('sample-modal')) {
+    document.getElementById('sample-modal').classList.remove('open');
+  }
+}
+
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PDF EXPORT
+// ═══════════════════════════════════════════════════════════════
+let _pdfCanvas = null;
+
+function exportPDF() {
+  showToast('Rendering preview…');
+  const dashboard = document.getElementById('tab-dashboard');
+  const footer = document.getElementById('footer-bar');
+  const footerWas = footer.style.display;
+  footer.style.display = 'none';
+
+  // Expand all collapsed sections before capture, record original states
+  const collapsed = [];
+  dashboard.querySelectorAll('[id^="rp-row-"], [id^="upi-detail-"]').forEach(el => {
+    if (el.style.display === 'none') {
+      collapsed.push(el);
+      el.style.display = 'block';
+    }
+  });
+  // Also expand any other display:none children inside rewards/UPI sections
+  dashboard.querySelectorAll('.rewards-card [style*="display:none"], #upi-list [style*="display:none"]').forEach(el => {
+    if (!collapsed.includes(el)) {
+      collapsed.push(el);
+      el.style.display = 'block';
+    }
+  });
+
+  html2canvas(dashboard, { scale: 1.5, useCORS: true, backgroundColor: '#f8f7f4' }).then(canvas => {
+    footer.style.display = footerWas;
+    // Restore all collapsed sections
+    collapsed.forEach(el => { el.style.display = 'none'; });
+    _pdfCanvas = canvas;
+
+    // Build page previews
+    const A4_RATIO = 297 / 210; // height/width for A4
+    const previewW = 620;
+    const pageHeightPx = (canvas.width / 1.5) * A4_RATIO * 1.5; // canvas pixels per A4 page
+    const totalPages = Math.ceil(canvas.height / pageHeightPx);
+
+    const container = document.getElementById('pdf-preview-pages');
+    container.innerHTML = '';
+
+    for (let p = 0; p < totalPages; p++) {
+      const pageCanvas = document.createElement('canvas');
+      const sliceH = Math.min(pageHeightPx, canvas.height - p * pageHeightPx);
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceH;
+      const ctx = pageCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, p * pageHeightPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
+      const img = document.createElement('img');
+      img.src = pageCanvas.toDataURL('image/jpeg', 0.8);
+      img.style.cssText = 'width:100%;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,0.2);display:block';
+
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:10px;font-family:var(--font-mono);color:#888;text-align:center;margin-bottom:4px';
+      label.textContent = 'Page ' + (p + 1) + ' of ' + totalPages;
+
+      const wrap = document.createElement('div');
+      wrap.appendChild(label);
+      wrap.appendChild(img);
+      container.appendChild(wrap);
+    }
+
+    const pdfModal = document.getElementById('pdf-preview-modal');
+    pdfModal.style.display = 'flex';
+  }).catch(() => { showToast('Preview failed — try again'); });
+}
+
+function closePDFPreview() {
+  const pdfModal = document.getElementById('pdf-preview-modal');
+  pdfModal.style.display = 'none';
+  _pdfCanvas = null;
+}
+
+function confirmDownloadPDF() {
+  if (!_pdfCanvas) { showToast('No preview ready'); return; }
+  const canvas = _pdfCanvas;
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const imgW = pageW;
+  const imgH = (canvas.height * pageW) / canvas.width;
+  let y = 0;
+  while (y < imgH) {
+    if (y > 0) pdf.addPage();
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', 0, -y, imgW, imgH);
+    y += pageH;
+  }
+  pdf.save('StatementSense-Analysis.pdf');
+  closePDFPreview();
+  showToast('PDF downloaded! 📄');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXIT POPUP
+// ═══════════════════════════════════════════════════════════════
+// Exit popup removed — remapping log available in footer bar at any time
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function showDebugPanel(rows) {
+  const body = document.getElementById('debug-modal-body');
+  const preview = rows.slice(0, 20);
+
+  let html = `
+    <div style="margin-bottom:16px;padding:12px 16px;background:var(--amber-soft);border-radius:10px;font-size:12.5px;color:#92400e;border:1px solid rgba(217,119,6,0.2)">
+      <strong>What to do:</strong> Scan the table below. Find the row where your column headers appear (Date, Description, Amount etc.).
+      Then share those header names with me so I can map the parser to your exact file format.
+    </div>
+    <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border)">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono)">
+    <thead>
+      <tr style="background:var(--ink);color:#fff">
+        <th style="padding:8px 12px;text-align:left;white-space:nowrap">Row #</th>`;
+
+  // Column headers A, B, C...
+  const maxCols = Math.max(...preview.map(r => r.length), 0);
+  for (let c = 0; c < Math.min(maxCols, 12); c++) {
+    html += `<th style="padding:8px 12px;text-align:left">Col ${c+1}</th>`;
+  }
+  html += `</tr></thead><tbody>`;
+
+  preview.forEach((row, i) => {
+    const isLikelyHeader = row.some(c => {
+      const s = String(c).toLowerCase().trim();
+      return ['date','amount','debit','credit','description','narration','particulars','dr/cr'].some(k => s.includes(k));
+    });
+    const rowBg = isLikelyHeader ? 'background:rgba(42,110,232,0.08);font-weight:600' : (i%2===0?'background:var(--surface)':'');
+    html += `<tr style="${rowBg}">`;
+    html += `<td style="padding:7px 12px;color:var(--ink-muted);white-space:nowrap">${isLikelyHeader ? '⭐ ' : ''}Row ${i+1}</td>`;
+    for (let c = 0; c < Math.min(maxCols, 12); c++) {
+      const val = String(row[c] ?? '').trim();
+      const display = val.length > 28 ? val.slice(0,26)+'…' : val;
+      html += `<td style="padding:7px 12px;white-space:nowrap;border-left:1px solid var(--border);color:${val?'var(--ink)':'var(--ink-muted)'}">${display || '—'}</td>`;
+    }
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>
+    <div style="margin-top:16px;padding:12px 16px;background:var(--surface-2);border-radius:10px;font-size:12px;color:var(--ink-muted)">
+      Rows marked with ⭐ are likely header rows. Share which row contains your column names and what they are — the parser will be updated to match your exact file.
+    </div>`;
+
+  body.innerHTML = html;
+  document.getElementById('debug-modal').classList.add('open');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function resetApp() {
+  if (!confirm('Load a new statement? Current session data will be cleared.')) return;
+  allTransactions = [];
+  filteredTransactions = [];
+  rewardsConfirmed = false;
+  newMappingsThisSession = 0;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('footer-bar').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  Object.values(charts).forEach(c => c?.destroy());
+  charts = {};
+}
+
+// Topbar card info (demo — actual name/card comes from file)
+document.getElementById('topbar-card-info').textContent = 'HDFC TataNeu ••••';
+</script>
+
+<!-- ═══ PDF PREVIEW MODAL ═══ -->
+<div class="modal-overlay" id="pdf-preview-modal" onclick="if(event.target===this)closePDFPreview()" style="z-index:9998">
+  <div class="modal" style="max-width:700px;max-height:90vh">
+    <div class="modal-header">
+      <div class="modal-title">PDF Preview</div>
+      <button class="modal-close" onclick="closePDFPreview()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="padding:0;overflow:hidden">
+      <div style="padding:16px 20px;background:var(--surface-2);border-bottom:1px solid var(--border);font-size:12px;color:var(--ink-muted)">
+        Preview of your export. Confirm to download.
+      </div>
+      <div id="pdf-preview-pages" style="padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:55vh;background:#e8e8e8"></div>
+      <div style="padding:16px 20px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border)">
+        <button onclick="closePDFPreview()" style="padding:9px 20px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font-body);cursor:pointer;font-size:13px">Cancel</button>
+        <button onclick="confirmDownloadPDF()" style="padding:9px 22px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font-body);font-weight:600;cursor:pointer;font-size:13px">&#x2193; Download PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD CATEGORY MODAL ═══ -->
+<div class="modal-overlay" id="add-cat-modal" onclick="if(event.target===this)closeAddCatModal()" style="z-index:9999">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">Manage Categories</div>
+      <button class="modal-close" onclick="closeAddCatModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="padding:20px">
+      <div style="margin-bottom:8px;font-size:13px;color:var(--ink-soft)">New category name:</div>
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <input id="add-cat-input" class="search-input" type="text" placeholder="e.g. Subscriptions" style="flex:1;font-size:14px">
+        <button onclick="confirmAddCat()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font-body);font-weight:600;cursor:pointer;font-size:13px;white-space:nowrap">Add</button>
+      </div>
+      <div id="custom-cat-list"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button onclick="closeAddCatModal()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font-body);cursor:pointer;font-size:13px">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
