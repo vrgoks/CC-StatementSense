@@ -11,30 +11,65 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
-    --ink: #0f1117;
-    --ink-soft: #3a3d4a;
-    --ink-muted: #7a7f96;
-    --surface: #f8f7f4;
-    --surface-2: #eeecea;
-    --surface-3: #e4e2de;
-    --accent: #e8562a;
-    --accent-soft: #fdf0ec;
-    --accent-2: #2a6ee8;
-    --accent-2-soft: #edf2fd;
-    --green: #1a8a5a;
-    --green-soft: #eaf6f0;
-    --amber: #d97706;
-    --amber-soft: #fef3e2;
-    --border: rgba(15,17,23,0.08);
-    --border-strong: rgba(15,17,23,0.16);
+    /* High-contrast neutrals */
+    --ink: #111827;
+    --ink-soft: #374151;
+    --ink-muted: #4b5563;
+
+    /* Light, neutral surfaces for better legibility */
+    --surface: #f9fafb;
+    --surface-2: #f3f4f6;
+    --surface-3: #e5e7eb;
+
+    /* Accents tuned for contrast */
+    --accent: #dc4a1d;
+    --accent-soft: #fff3eb;
+    --accent-2: #1d4ed8;
+    --accent-2-soft: #e0edff;
+
+    /* Rewards-specific accent */
+    --rewards: #7c3aed;
+    --rewards-soft: #f3e8ff;
+
+    /* Semantic colors */
+    --green: #15803d;
+    --green-soft: #ecfdf3;
+    --amber: #b45309;
+    --amber-soft: #fef3c7;
+
+    /* Borders & elevation */
+    --border: rgba(17,24,39,0.12);
+    --border-strong: rgba(17,24,39,0.22);
     --shadow-sm: 0 1px 3px rgba(15,17,23,0.06), 0 1px 2px rgba(15,17,23,0.04);
     --shadow-md: 0 4px 16px rgba(15,17,23,0.08), 0 2px 6px rgba(15,17,23,0.04);
     --shadow-lg: 0 12px 40px rgba(15,17,23,0.12), 0 4px 16px rgba(15,17,23,0.06);
+
     --radius: 12px;
     --radius-lg: 20px;
     --font-display: 'DM Serif Display', Georgia, serif;
     --font-body: 'Outfit', sans-serif;
     --font-mono: 'DM Mono', monospace;
+  }
+
+  /* Accessible focus outlines for keyboard users */
+  *:focus-visible {
+    outline: 2px solid var(--accent-2);
+    outline-offset: 2px;
+  }
+
+  button:focus-visible,
+  .tab-btn:focus-visible,
+  .btn-pdf:focus-visible,
+  .btn-upload-new:focus-visible,
+  .btn-confirm:focus-visible,
+  .btn-add-cat:focus-visible,
+  .btn-copy-log:focus-visible,
+  .btn-exit-copy:focus-visible,
+  .btn-exit-dismiss:focus-visible,
+  .cat-pill:focus-visible,
+  .search-input:focus-visible,
+  .filter-select:focus-visible {
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.35);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,7 +79,7 @@
     background: var(--surface);
     color: var(--ink);
     min-height: 100vh;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.6;
   }
 
@@ -239,7 +274,7 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--ink-muted);
+    color: rgba(255,255,255,0.9);
     margin-bottom: 16px;
   }
 
@@ -254,14 +289,14 @@
     align-items: flex-start;
     gap: 10px;
     font-size: 12.5px;
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.9);
   }
 
   .privacy-item .pi-icon {
     width: 20px;
     height: 20px;
     border-radius: 6px;
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.18);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -547,6 +582,7 @@
   .badge-green { background: var(--green-soft); color: var(--green); }
   .badge-orange { background: var(--accent-soft); color: var(--accent); }
   .badge-amber { background: var(--amber-soft); color: var(--amber); }
+  .badge-rewards { background: var(--rewards-soft); color: var(--rewards); }
 
   .upi-stat-row {
     display: flex;
@@ -649,88 +685,173 @@
   /* ─── REWARDS WIDGET ─── */
   .rewards-card {
     background: #fff;
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     overflow: hidden;
     margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  #rewards-program-table {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
   .rewards-header {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    padding: 20px 24px;
+    background: var(--surface-2);
+    padding: 14px 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-bottom: 1px solid var(--border);
   }
 
   .rewards-title {
-    color: #fff;
-    font-size: 14px;
+    color: var(--ink);
+    font-size: 13px;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
 
-  .rewards-title .star { font-size: 18px; }
-
-  .rewards-gate {
-    padding: 40px 24px;
-    text-align: center;
-  }
-
-  .rewards-gate p {
+  .rewards-title .star {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--rewards-soft);
+    color: var(--rewards);
     font-size: 13px;
-    color: var(--ink-muted);
-    max-width: 380px;
-    margin: 0 auto 20px;
-    line-height: 1.6;
   }
 
-  .btn-confirm {
-    padding: 10px 24px;
-    background: #1a1a2e;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
+  .reward-program-card {
+    flex: 1 1 220px;
+    max-width: 260px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px 10px;
+    background: #fff;
+    cursor: default;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .reward-program-card.has-txns {
     cursor: pointer;
-    transition: all 0.15s ease;
   }
 
-  .btn-confirm:hover { background: #16213e; }
-
-  .rewards-content { display: none; padding: 24px; }
-  .rewards-content.visible { display: block; }
-
-  .rewards-summary {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 20px;
+  .reward-program-card:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
   }
 
-  .reward-stat {
-    text-align: center;
-    padding: 16px;
-    background: var(--surface);
-    border-radius: 10px;
+  .reward-program-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink);
   }
 
-  .reward-stat-val {
-    font-family: var(--font-display);
-    font-size: 28px;
-    color: var(--green);
-  }
-
-  .reward-stat-label {
+  .reward-program-note {
     font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+    min-height: 2.4em;
+  }
+
+  .reward-program-bar {
+    margin-top: 8px;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--surface-3);
+    overflow: hidden;
+  }
+
+  .reward-program-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--rewards);
+  }
+
+  .reward-program-meta {
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .reward-program-points {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--rewards);
+  }
+
+  .reward-program-points-label {
+    font-size: 10px;
     color: var(--ink-muted);
     font-family: var(--font-mono);
     text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
+
+  .reward-program-meta-secondary {
+    font-size: 10px;
+    color: var(--ink-muted);
+    text-align: right;
+  }
+
+  .reward-program-empty {
+    font-size: 10px;
+    color: var(--ink-muted);
+    text-align: right;
+    font-style: italic;
+  }
+
+  .reward-program-details {
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .rewards-total-row {
+    flex: 1 1 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    margin-top: 4px;
+    background: var(--surface-2);
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+  }
+
+  .rewards-total-row-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .rewards-total-row-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--rewards);
+  }
+
+  .rewards-footnote {
+    flex: 1 1 100%;
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--ink-muted);
+    font-style: italic;
+    text-align: right;
+  }
+
+  /* Rewards table body keeps the standard dashboard look */
 
   /* ─── TRANSACTION TABLE ─── */
   .table-wrap {
@@ -1223,6 +1344,202 @@
 
   .toast.show { opacity: 1; transform: translateY(0); }
 
+  /* ─── CARD CHATBOT ─── */
+  .card-chat-toggle {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, #f97316, #db2777, #7c3aed);
+    color: #fff;
+    display: none; /* only shown after statement load */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    z-index: 9998;
+    padding: 0;
+  }
+
+  .card-chat-toggle-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-chat-face {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #111827;
+  }
+
+  .card-chat-badge {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #111827;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-chat-panel {
+    position: fixed;
+    right: 24px;
+    bottom: 80px;
+    width: 320px;
+    max-height: 420px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9998;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+
+  .card-chat-panel.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .card-chat-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--surface-2);
+  }
+
+  .card-chat-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .card-chat-subtitle {
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+
+  .card-chat-close {
+    background: none;
+    border: none;
+    padding: 2px;
+    border-radius: 999px;
+    cursor: pointer;
+    color: var(--ink-muted);
+    font-size: 14px;
+  }
+
+  .card-chat-messages {
+    flex: 1;
+    padding: 10px 12px;
+    overflow-y: auto;
+    background: var(--surface);
+  }
+
+  .card-chat-msg {
+    max-width: 90%;
+    padding: 6px 9px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .card-chat-msg.bot {
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--ink-soft);
+    white-space: pre-line;
+  }
+
+  .card-chat-msg.user {
+    margin-left: auto;
+    background: var(--accent-2);
+    color: #fff;
+  }
+
+  .card-chat-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+    background: #fff;
+  }
+
+  .card-chat-input-row input[type="text"] {
+    flex: 1;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: var(--font-body);
+    background: var(--surface);
+    color: var(--ink);
+  }
+
+  .card-chat-input-row button {
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: none;
+    font-size: 12px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    background: var(--accent-2);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .card-chat-footnote {
+    padding: 4px 10px 8px;
+    font-size: 10px;
+    color: var(--ink-muted);
+    text-align: right;
+    background: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .card-chat-panel {
+      right: 12px;
+      left: 12px;
+      width: auto;
+      max-height: 60vh;
+    }
+    .card-chat-toggle {
+      right: 16px;
+      bottom: 16px;
+    }
+  }
+
   /* ─── EMPTY STATES ─── */
   .empty-state {
     text-align: center;
@@ -1526,16 +1843,16 @@
       </div>
     </div>
 
-    <!-- TATANEU REWARDS -->
+    <!-- REWARDS SUMMARY -->
     <div class="rewards-card" id="rewards-card" style="display:none">
       <div class="rewards-header">
         <div class="rewards-title">
           <span class="star">✦</span>
-          Rewards Program Points Summary
+          Rewards summary
         </div>
-        <span id="rewards-total-badge" class="badge" style="background:rgba(217,119,6,0.15);color:#b45309;font-family:var(--font-mono);font-size:11px;padding:4px 10px;border-radius:20px"></span>
+        <span id="rewards-total-badge" class="badge badge-rewards"></span>
       </div>
-      <div id="rewards-program-table" style="margin-top:16px"></div>
+      <div id="rewards-program-table"></div>
     </div>
 
     <div class="section-header" style="margin-top:32px"><h2 class="section-title">All Transactions</h2></div>
@@ -1720,6 +2037,48 @@
 <!-- ═══ TOAST ═══ -->
 <div class="toast" id="toast">Copied!</div>
 
+<!-- ═══ CARD RULES CHATBOT ═══ -->
+<button
+  class="card-chat-toggle"
+  id="card-chat-toggle"
+  type="button"
+  onclick="toggleCardChat()"
+  aria-label="Ask about card rewards and rules"
+>
+  <span class="card-chat-toggle-inner">
+    <span class="card-chat-face">👤</span>
+    <span class="card-chat-badge">N</span>
+  </span>
+</button>
+
+<div class="card-chat-panel" id="card-chatbot" aria-hidden="true">
+  <div class="card-chat-header">
+    <div>
+      <div class="card-chat-title">Card help</div>
+      <div class="card-chat-subtitle">Ask about rewards & rules.</div>
+    </div>
+    <button class="card-chat-close" type="button" onclick="toggleCardChat()" aria-label="Close card help">✕</button>
+  </div>
+  <div class="card-chat-messages" id="card-chatbot-messages">
+    <div class="card-chat-msg bot">
+      I can help you understand cashback, rewards, and key rules for this statement. Ask a question like
+      “How is cashback calculated?” or “What are the bonus NeuCoins rules?”.
+    </div>
+  </div>
+  <form class="card-chat-input-row" onsubmit="handleCardChatSubmit(event)">
+    <input
+      id="card-chatbot-input"
+      type="text"
+      placeholder="Ask about cashback or rules…"
+      autocomplete="off"
+    />
+    <button type="submit">Send</button>
+  </form>
+  <div class="card-chat-footnote">
+    Answers run entirely in your browser. For exact terms, refer to your official card rulebook.
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════
 // STATE
@@ -1732,6 +2091,7 @@ let newMappingsThisSession = 0;
 let compStatements = [null, null, null];
 let activeCompSlot = -1;
 let rewardsConfirmed = false;
+let cardChatOpen = false;
 
 const SEED_MERCHANT_MAP = [
   { raw: "TURFTOWNTECHNOLOGI Delhi", label: "TURF TOWN", category: "Entertainment", source: "seed" },
@@ -2271,6 +2631,8 @@ function initApp(txns, meta) {
   document.getElementById('landing').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('footer-bar').style.display = 'block';
+  const chatToggle = document.getElementById('card-chat-toggle');
+  if (chatToggle) chatToggle.style.display = 'flex';
 
   populateStats(txns, meta);
   populateCatFilter(txns);
@@ -2429,6 +2791,203 @@ function confirmAddCat() {
 
 function fmt(n) {
   return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARD RULES CHATBOT (LOCAL ONLY)
+// ═══════════════════════════════════════════════════════════════
+function toggleCardChat() {
+  const panel = document.getElementById('card-chatbot');
+  const toggle = document.getElementById('card-chat-toggle');
+  if (!panel || !toggle) return;
+
+  cardChatOpen = !cardChatOpen;
+  if (cardChatOpen) {
+    panel.classList.add('visible');
+    panel.setAttribute('aria-hidden', 'false');
+    toggle.setAttribute('aria-pressed', 'true');
+    setTimeout(() => {
+      const inp = document.getElementById('card-chatbot-input');
+      if (inp) inp.focus();
+    }, 60);
+  } else {
+    panel.classList.remove('visible');
+    panel.setAttribute('aria-hidden', 'true');
+    toggle.setAttribute('aria-pressed', 'false');
+  }
+}
+
+function appendCardChatMessage(role, text) {
+  const wrap = document.getElementById('card-chatbot-messages');
+  if (!wrap) return;
+  const div = document.createElement('div');
+  div.className = 'card-chat-msg ' + (role === 'user' ? 'user' : 'bot');
+  div.textContent = text;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function handleCardChatSubmit(e) {
+  e.preventDefault();
+  const inp = document.getElementById('card-chatbot-input');
+  if (!inp) return;
+  const q = (inp.value || '').trim();
+  if (!q) return;
+  appendCardChatMessage('user', q);
+  inp.value = '';
+
+  const answer = answerCardQuestion(q);
+  appendCardChatMessage('bot', answer);
+}
+
+function answerCardQuestion(rawQuery) {
+  const q = (rawQuery || '').toLowerCase();
+  const prefix = 'Tata Neu Infinity — quick take:\n';
+
+  const hasData = Array.isArray(allTransactions) && allTransactions.length > 0;
+  const meta = window._lastMeta || {};
+  const neuWithBank = meta.neuCoinsWithBank || 0;
+  const bonusNeu = meta.rewardProgramTotal || 0;
+  const debits = hasData ? allTransactions.filter(t => t.type === 'debit') : [];
+  const totalSpend = debits.reduce((s,t) => s + t.amount, 0);
+  const totalNeuFromTxns = hasData ? allTransactions.reduce((s,t) => s + (t.neuCoins || 0), 0) : 0;
+  const upiTxns = hasData ? allTransactions.filter(t => t.isUPI && t.type === 'debit') : [];
+  const upiSpend = upiTxns.reduce((s,t) => s + t.amount, 0);
+  const upiNeu = upiTxns.reduce((s,t) => s + (t.neuCoins || 0), 0);
+
+  if (q.includes('cashback') || q.includes('cash back')) {
+    if (hasData) {
+      return prefix + [
+        `• This statement: about ${Math.round(totalNeuFromTxns).toLocaleString('en-IN')} NeuCoins credited from your transactions.`,
+        neuWithBank ? `• Closing NeuCoins with bank: ${neuWithBank.toLocaleString('en-IN')} (as per Reward Points Summary).` : null,
+        bonusNeu ? `• Bonus / program NeuCoins this cycle: ≈${bonusNeu.toLocaleString('en-IN')} (from Rewards summary).` : null,
+        totalSpend ? `• Effective “cashback” value ≈ ₹${Math.round(totalNeuFromTxns).toLocaleString('en-IN')} on eligible Tata Neu redemptions.` : null,
+        '• Rate basics:',
+        '  – Partner Tata brands (non‑EMI): 5% back as NeuCoins.',
+        '  – Other eligible non‑UPI spends + merchant EMI: 1.5% back as NeuCoins.',
+        '  – UPI (RuPay): up to 1.5% back, capped at 500 NeuCoins/month.',
+        '• No NeuCoins on fuel, wallet loads, rent/government, Smart EMI/Dial‑an‑EMI, etc.'
+      ].filter(Boolean).join('\n');
+    }
+    return prefix + [
+      '• “Cashback” comes as NeuCoins.',
+      '• Partner Tata brands (non‑EMI): 5% back as NeuCoins.',
+      '• Other eligible non‑UPI spends + merchant EMI: 1.5% back as NeuCoins.',
+      '• UPI (RuPay): up to 1.5% back, capped at 500 NeuCoins/month.',
+      '• No NeuCoins on fuel, wallet loads, rent/government, Smart EMI/Dial‑an‑EMI, etc.'
+    ].join('\n');
+  }
+
+  if (q.includes('neucoin') || q.includes('neu coin') || q.includes('reward') || q.includes('points')) {
+    if (hasData) {
+      return prefix + [
+        `• NeuCoins from this statement (sum of all txn NeuCoins): ≈${Math.round(totalNeuFromTxns).toLocaleString('en-IN')}.`,
+        neuWithBank ? `• NeuCoins with bank after this cycle: ${neuWithBank.toLocaleString('en-IN')}.` : null,
+        bonusNeu ? `• Of that, bonus / program NeuCoins: ≈${bonusNeu.toLocaleString('en-IN')}.` : null,
+        totalSpend ? `• Rough reward rate this cycle ≈ ${(totalNeuFromTxns / totalSpend * 100).toFixed(2)} NeuCoins per ₹100 spent.` : null,
+        '• Earn rules in short:',
+        '  – Base: 1.5% back as NeuCoins on most non‑UPI spends (incl. merchant EMI principal).',
+        '  – Partner Tata brands (non‑EMI): 5% back (1.5% base + 3.5% extra), within brand‑wise caps.',
+        '  – Grocery / Insurance / Utility / Telecom & Cable: 1.5% NeuCoins, each capped at 2,000 NeuCoins/month.',
+        '  – UPI (RuPay): up to 1.5% NeuCoins, 500 NeuCoins/month cap.'
+      ].filter(Boolean).join('\n');
+    }
+    return prefix + [
+      '• Base earn: 1.5% back as NeuCoins on most non‑UPI spends (incl. merchant EMI principal).',
+      '• Tata partner brands (non‑EMI): 5% back as NeuCoins (1.5% base + 3.5% extra), within brand‑wise caps.',
+      '• Grocery / Insurance / Utility / Telecom & Cable: 1.5% NeuCoins, each capped at 2,000 NeuCoins/month.',
+      '• UPI (RuPay): up to 1.5% NeuCoins, 500 NeuCoins/month cap.',
+      '• NeuCoins usually post a few days after transaction settlement; excluded categories never earn NeuCoins.'
+    ].join('\n');
+  }
+
+  if (q.includes('fuel') || q.includes('surcharge')) {
+    return prefix + [
+      '• Fuel spends: no NeuCoins.',
+      '• Fuel surcharge waiver: 1% on eligible fuel transactions.',
+      '• Transaction range: ₹400 to ₹5,000 per fuel swipe.',
+      '• Max waiver: ₹500 per statement cycle.'
+    ].join('\n');
+  }
+
+  if (q.includes('expiry') || q.includes('expire')) {
+    return prefix + [
+      '• From 01‑Aug‑2025: NeuCoins are valid for 12 months from the end of the month they are credited.',
+      '• Example: credited on 05‑Aug‑2025 → valid till 31‑Aug‑2026.',
+      '• Existing non‑promotional NeuCoins earned before 01‑Aug‑2025: broadly valid till 31‑Jul‑2026.',
+      '• Promotional / welcome NeuCoins follow their own (often shorter) expiry mentioned in the offer.'
+    ].join('\n');
+  }
+
+  if (q.includes('joining') || q.includes('welcome') || q.includes('milestone') || q.includes('spend based')) {
+    return prefix + [
+      '• Welcome benefit: 1,499 NeuCoins (equivalent to 1st‑year fee reversal).',
+      '• Condition: do your 1st transaction within 30 days of card issuance.',
+      '• Claim window: benefit shows in Tata Neu app within ~60 days, claimable for 180 days from the statement date.',
+      '• Not eligible: lifetime‑free or first‑year‑free card variants.',
+      '• Welcome NeuCoins validity: typically 365 days from the claim date.'
+    ].join('\n');
+  }
+
+  if (q.includes('upi')) {
+    if (hasData) {
+      return prefix + [
+        upiTxns.length
+          ? `• This statement: ${upiTxns.length} UPI debit transaction(s), totalling ${fmt(upiSpend)}.`
+          : '• This statement: no UPI debit transactions detected.',
+        upiNeu
+          ? `• NeuCoins actually credited on UPI txns (from statement): ≈${Math.round(upiNeu).toLocaleString('en-IN')}.`
+          : null,
+        '• Card rules:',
+        '  – Channel: UPI rewards apply on the RuPay variant.',
+        '  – Earn rate: up to 1.5% back as NeuCoins on eligible UPI spends.',
+        '  – Split (from 01‑Aug‑2024): 0.5% via any UPI app + extra 1% only via Tata Neu UPI ID.',
+        '  – Monthly cap: 500 NeuCoins from eligible UPI transactions.',
+        '• Exclusions (fuel, wallet loads, rent, government, some education via 3rd‑party apps, etc.) never earn NeuCoins even via UPI.'
+      ].filter(Boolean).join('\n');
+    }
+    return prefix + [
+      '• Channel: RuPay variant only for UPI rewards.',
+      '• Earn rate: up to 1.5% back as NeuCoins on eligible UPI spends.',
+      '• Split (from 01‑Aug‑2024):',
+      '  – 0.5% NeuCoins on eligible UPI spends via any UPI app.',
+      '  – +1% NeuCoins only when using your Tata Neu UPI ID (posted to Tata NeuPass).',
+      '• Monthly cap: 500 NeuCoins from UPI transactions.',
+      '• Exclusions still apply (fuel, wallet loads, rent, government, certain education via 3rd‑party apps, etc.).'
+    ].join('\n');
+  }
+
+  if (q.includes('exclude') || q.includes('excluded') || q.includes('no points') || q.includes('no neucoins')) {
+    return prefix + [
+      'No NeuCoins on these spends:',
+      '• Fuel.',
+      '• Wallet / prepaid / gift card loads and voucher purchases.',
+      '• Cash advances; payment of card outstanding, fees, and charges.',
+      '• Smart EMI / Dial‑an‑EMI.',
+      '• Rental and government‑related transactions.',
+      '• Certain education payments via 3rd‑party apps (e.g. CRED, Cheq, MobiKwik) — direct school/college may still earn.',
+      '• From 01‑Jul‑2025: online skill‑based gaming (MCC‑5816).'
+    ].join('\n');
+  }
+
+  if (q.includes('redeem') || q.includes('redemption') || q.includes('value')) {
+    return prefix + [
+      '• NeuCoins move from HDFC to Tata Neu usually within ~7 working days after statement generation.',
+      '• Statement shows: NeuCoins with bank + NeuCoins transferred to Tata Neu.',
+      '• Typical value: 1 NeuCoin ≈ ₹1 on eligible Tata Neu Rewards purchases.',
+      '• Where you can use them: brands like Tata Neu, bigbasket, Croma, IHCL, Tata Cliq, Tata 1mg and others via Tata Pay / “Use my NeuCoins”.',
+      '• NeuCoins can’t be converted to cash; they only offset eligible purchases.'
+    ].join('\n');
+  }
+
+  return prefix + [
+    'You can ask things like:',
+    '• “How much cashback do I get on Tata brands?”',
+    '• “Do I earn NeuCoins on rent or fuel?”',
+    '• “What’s the NeuCoins cap on UPI?”',
+    '• “When do my NeuCoins expire?”',
+    '• “How do I redeem NeuCoins and what are they worth?”'
+  ].join('\n');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2936,65 +3495,63 @@ function renderRewards(txns, meta) {
     const barW = Math.round((p.points / maxPts) * 100);
     const hasTxns = matched.length > 0;
     const rowId = 'rp-row-' + i;
-    const bg = i % 2 === 0 ? '#fff' : 'var(--surface-2)';
 
     return [
-      '<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">',
-        '<div onclick="toggleRewardRow(\'' + rowId + '\')" style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 16px;cursor:' + (hasTxns ? 'pointer' : 'default') + ';background:' + bg + '">',
-          '<div>',
-            '<div style="font-weight:600;font-size:13px;color:var(--ink)">' + p.program + '</div>',
-            '<div style="font-size:11px;color:var(--ink-muted);margin-top:2px">' + note + '</div>',
-            '<div style="margin-top:6px;height:3px;border-radius:2px;background:var(--border);width:100%">',
-              '<div style="height:3px;border-radius:2px;background:var(--accent);width:' + barW + '%"></div>',
-            '</div>',
-          '</div>',
-          '<div style="text-align:right;min-width:80px">',
-            '<div style="font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--accent)">' + p.points.toLocaleString('en-IN') + '</div>',
-            '<div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono)">pts earned</div>',
-          '</div>',
-          '<div style="font-size:18px;color:var(--ink-muted);width:20px;text-align:center">' + (hasTxns ? '\u203a' : '\u2013') + '</div>',
+      '<div class="reward-program-card' + (hasTxns ? ' has-txns' : '') + '"' + (hasTxns ? ' onclick="toggleRewardRow(\'' + rowId + '\')"' : '') + '>',
+        '<div>',
+          '<div class="reward-program-name">' + p.program + '</div>',
+          '<div class="reward-program-note">' + note + '</div>',
         '</div>',
-        '<div id="' + rowId + '" style="display:none;border-top:1px solid var(--border)">',
-          hasTxns ? [
-            '<div style="padding:8px 16px;background:var(--surface-2);display:flex;justify-content:space-between;align-items:center">',
-              '<div style="font-size:11px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.06em">' +
-                matched.length + ' transaction' + (matched.length !== 1 ? 's' : '') + ' \u00b7 ' + rateLabel + ' \u00b7 Est. ' + estPts.toLocaleString('en-IN') + ' pts' +
+        '<div class="reward-program-bar">',
+          '<div class="reward-program-bar-fill" style="width:' + barW + '%"></div>',
+        '</div>',
+        '<div class="reward-program-meta">',
+          '<div>',
+            '<div class="reward-program-points">' + p.points.toLocaleString('en-IN') + '</div>',
+            '<div class="reward-program-points-label">pts earned</div>',
+          '</div>',
+          hasTxns
+            ? '<div class="reward-program-meta-secondary">' + matched.length + ' txn' + (matched.length !== 1 ? 's' : '') + ' · Est. ' + estPts.toLocaleString('en-IN') + ' pts</div>'
+            : '<div class="reward-program-empty">No matched transactions yet</div>',
+        '</div>',
+        hasTxns ? [
+          '<div id="' + rowId + '" class="reward-program-details" style="display:none">',
+            '<div style="padding:6px 10px;background:var(--surface-2);display:flex;justify-content:space-between;align-items:center">',
+              '<div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.06em">' +
+                matched.length + ' transaction' + (matched.length !== 1 ? 's' : '') + ' · ' + rateLabel + ' · Est. ' + estPts.toLocaleString('en-IN') + ' pts' +
               '</div>',
-              '<div style="font-size:10px;color:var(--ink-muted);font-style:italic">Estimate — actual calc uses HDFC merchant IDs</div>',
+              '<div style="font-size:10px;color:var(--ink-muted);font-style:italic">Estimate only</div>',
             '</div>',
             matched.map(t =>
-              '<div style="display:grid;grid-template-columns:90px 1fr auto;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);font-size:12px">' +
+              '<div style="display:grid;grid-template-columns:70px 1fr auto;gap:6px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px">' +
                 '<div style="font-family:var(--font-mono);color:var(--ink-muted)">' + (t.date || '') + '</div>' +
                 '<div style="font-weight:500;color:var(--ink)">' + t.label + '</div>' +
-                '<div style="font-family:var(--font-mono);color:var(--ink);text-align:right">\u2212' + fmt(t.amount) + '</div>' +
+                '<div style="font-family:var(--font-mono);color:var(--ink);text-align:right">-' + fmt(t.amount) + '</div>' +
               '</div>'
             ).join(''),
-            '<div style="padding:8px 16px;display:flex;justify-content:space-between;background:rgba(234,88,12,0.04)">',
-              '<div style="font-size:12px;font-weight:600;color:var(--ink)">Matched spend</div>',
-              '<div style="font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--accent)">' + fmt(estTotal) + '</div>',
-            '</div>'
-          ].join('') : '<div style="padding:12px 16px;font-size:12px;color:var(--ink-muted);font-style:italic">' + note + '</div>',
-        '</div>',
+            '<div style="padding:6px 10px;display:flex;justify-content:space-between;background:rgba(124,58,237,0.06)">',
+              '<div style="font-size:11px;font-weight:600;color:var(--ink)">Matched spend</div>',
+              '<div style="font-family:var(--font-mono);font-weight:700;font-size:12px;color:var(--rewards)">' + fmt(estTotal) + '</div>',
+            '</div>',
+          '</div>'
+        ].join('') : '',
       '</div>'
     ].join('');
   }).join('') +
-  '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);margin-top:4px">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--ink)">Total Bonus NeuCoins This Cycle</div>' +
-    '<div style="font-family:var(--font-mono);font-weight:700;font-size:16px;color:var(--accent)">' + total.toLocaleString('en-IN') + '</div>' +
+  '<div class="rewards-total-row">' +
+    '<div class="rewards-total-row-label">Total bonus NeuCoins this cycle</div>' +
+    '<div class="rewards-total-row-value">' + total.toLocaleString('en-IN') + '</div>' +
   '</div>' +
-  '<div style="margin-top:8px;font-size:10px;color:var(--ink-muted);font-style:italic;text-align:right">Bonus NeuCoins only. Base NeuCoins (1.5% on all eligible spends) are tracked separately in your Total NeuCoins stat card.</div>';
+  '<div class="rewards-footnote">Bonus NeuCoins only. Base NeuCoins (1.5% on all eligible spends) are tracked separately in your Total NeuCoins stat card.</div>';
 }
 
 function toggleRewardRow(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  const chevron = el.previousElementSibling ? el.previousElementSibling.querySelector('div:last-child') : null;
-  if (el.style.display === 'none') {
+  if (el.style.display === 'none' || !el.style.display) {
     el.style.display = 'block';
-    if (chevron) chevron.textContent = '\u02c5';
   } else {
     el.style.display = 'none';
-    if (chevron) chevron.textContent = '\u203a';
   }
 }
 
@@ -3434,6 +3991,13 @@ function resetApp() {
   document.getElementById('file-input').value = '';
   Object.values(charts).forEach(c => c?.destroy());
   charts = {};
+  const chatToggle = document.getElementById('card-chat-toggle');
+  const chatPanel = document.getElementById('card-chatbot');
+  if (chatToggle) chatToggle.style.display = 'none';
+  if (chatPanel) {
+    chatPanel.classList.remove('visible');
+    chatPanel.setAttribute('aria-hidden', 'true');
+  }
 }
 
 // Topbar card info (demo — actual name/card comes from file)
