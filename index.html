@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StatementSense — CC Statement Analyser</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- CDN Scripts with fallbacks -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous" onerror="handleCDNError('XLSX')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" integrity="sha384-DhxhYObIMeMNGyAG7iK11OHzBIKyEIeRL0ad1iFPAOwZB8iirUlTT0O/WJJUk8+o" crossorigin="anonymous" onerror="handleCDNError('Chart.js')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" onerror="handleCDNError('jsPDF')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous" onerror="handleCDNError('html2canvas')"></script>
 <style>
   :root {
     /* High-contrast neutrals */
@@ -304,6 +305,52 @@
     font-size: 10px;
     margin-top: 1px;
   }
+
+  /* ─── HISTORY DROPDOWN ─── */
+  .history-dropdown-wrap {
+    position: relative;
+  }
+  .history-select {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--surface-2);
+    color: var(--ink);
+    cursor: pointer;
+    outline: none;
+    max-width: 180px;
+  }
+  .btn-history-action {
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn-history-action:hover { background: var(--surface-2); }
+
+  /* ─── DELTA BADGE ─── */
+  .stat-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .stat-delta.up { color: #dc2626; }
+  .stat-delta.down { color: var(--green); }
+  .stat-delta.neutral { color: var(--ink-muted); }
+  .stat-card.accent .stat-delta.up { color: #fca5a5; }
+  .stat-card.accent .stat-delta.down { color: #bbf7d0; }
 
   /* ─── APP SHELL ─── */
   #app { display: none; min-height: 100vh; }
@@ -1051,6 +1098,88 @@
   .type-credit { background: var(--green-soft); color: var(--green); }
 
   .flag-icon { font-size: 12px; cursor: help; }
+  .zero-neu-flag { font-size: 11px; cursor: help; opacity: 0.8; }
+  .row-zero-neu td { background: rgba(245,158,11,0.05) !important; }
+
+  /* ─── DARK MODE ─── */
+  body.dark {
+    --ink: #f3f4f6; --ink-soft: #d1d5db; --ink-muted: #9ca3af;
+    --surface: #111827; --surface-2: #1f2937; --surface-3: #374151;
+    --border: rgba(255,255,255,0.1); --border-strong: rgba(255,255,255,0.18);
+    --accent-soft: #3b1a0e; --accent-2-soft: #1e2f5e;
+    --rewards-soft: #2d1f4e; --green-soft: #052e16; --amber-soft: #2d1b00;
+  }
+  body.dark .stat-card, body.dark .chart-card, body.dark .widget-card,
+  body.dark .table-wrap, body.dark .rewards-card, body.dark .reward-program-card,
+  body.dark .modal, body.dark .comp-slot, body.dark .cap-tracker-card,
+  body.dark .fuel-tracker-card { background: var(--surface-2); border-color: var(--border); }
+  body.dark .topbar { background: rgba(17,24,39,0.97); }
+  body.dark .data-table thead th { background: var(--surface-3); }
+  body.dark .data-table tbody tr:hover { background: var(--surface-3); }
+  body.dark .tab-btn.active { background: var(--surface-3); }
+  body.dark .tabs { background: var(--surface-3); }
+  body.dark .inline-edit-input, body.dark .search-input,
+  body.dark .filter-select { background: var(--surface-3); color: var(--ink); border-color: var(--border); }
+  body.dark .card-chat-panel, body.dark .card-chat-header,
+  body.dark .card-chat-msg.bot, body.dark .modal-body,
+  body.dark .modal-header { background: var(--surface-2); }
+
+  .btn-dark-mode {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--border-strong); background: transparent;
+    cursor: pointer; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .btn-dark-mode:hover { background: var(--surface-2); }
+
+  /* ─── CAP TRACKER ─── */
+  .cap-tracker-card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 20px 24px;
+    box-shadow: var(--shadow-sm); margin-bottom: 28px;
+  }
+  .cap-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .cap-row:last-child { margin-bottom: 0; }
+  .cap-label { font-size: 12px; font-weight: 600; color: var(--ink); min-width: 120px; }
+  .cap-bar-wrap { flex: 1; height: 8px; background: var(--surface-3); border-radius: 999px; overflow: hidden; }
+  .cap-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+  .cap-bar-fill.ok { background: var(--green); }
+  .cap-bar-fill.warn { background: var(--amber); }
+  .cap-bar-fill.full { background: var(--accent); }
+  .cap-meta { font-size: 11px; font-family: var(--font-mono); color: var(--ink-muted); white-space: nowrap; min-width: 130px; text-align: right; }
+
+  /* ─── INSIGHTS ─── */
+  .insights-panel {
+    background: var(--ink); border-radius: var(--radius-lg);
+    padding: 20px 24px; margin-bottom: 28px;
+    display: flex; flex-wrap: wrap; gap: 12px;
+  }
+  .insight-chip {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(255,255,255,0.07); border-radius: 10px;
+    padding: 10px 14px; font-size: 12.5px;
+    color: rgba(255,255,255,0.88); flex: 1 1 260px; line-height: 1.5;
+  }
+  .insight-chip .ic-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ─── FUEL TRACKER ─── */
+  .fuel-tracker-card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 20px 24px;
+    box-shadow: var(--shadow-sm); margin-bottom: 28px;
+  }
+
+  /* ─── RECURRING ─── */
+  .recurring-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px; border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    margin-bottom: 6px; font-size: 12px; gap: 8px;
+  }
+  .recurring-name { font-weight: 600; flex: 1; }
+  .recurring-meta { font-size: 11px; color: var(--ink-muted); font-family: var(--font-mono); }
+  .recurring-avg { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; }
 
   /* ─── COMPARISON TAB ─── */
   .comp-upload-grid {
@@ -1641,7 +1770,7 @@
       </div>
       <p style="margin-top:14px;font-size:12px;color:var(--ink-muted)">Accepted formats: <span style="font-family:var(--font-mono);font-size:11px">XLS · XLSX</span></p>
     </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls" />
+    <input type="file" id="file-input" accept=".xlsx,.xls" aria-label="Upload credit card statement file" />
 
     <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:20px">
       <button onclick="loadSampleData()" style="background:none;border:none;color:var(--accent);font-family:var(--font-body);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-weight:500">
@@ -1652,6 +1781,11 @@
     <div class="advisory">
       <span>⚠️</span>
       <span>If you've opened your statement in Excel before uploading, some data may have been quietly reformatted. Use the file directly as downloaded from your bank portal for best results.</span>
+    </div>
+
+    <div id="landing-history-bar" style="display:none;margin-bottom:20px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="font-size:13px;color:var(--ink-soft)">📂 You have saved statements — <strong>jump back in:</strong></div>
+      <select class="history-select" id="landing-history-select" onchange="if(this.value) switchStatement(this.value)" style="font-size:12px"><option value="">Select a month…</option></select>
     </div>
 
     <div class="privacy-details">
@@ -1695,6 +1829,14 @@
     </div>
     <div class="topbar-right">
       <div class="card-info" id="topbar-card-info">••</div>
+      <div class="history-dropdown-wrap" id="history-wrap" style="display:none;align-items:center;gap:6px">
+        <select class="history-select" id="history-select" onchange="switchStatement(this.value)" title="Switch statement"></select>
+        <button class="btn-history-action" onclick="exportHistory()" title="Backup all history">⬇ Backup</button>
+        <button class="btn-history-action" onclick="document.getElementById('restore-input').click()" title="Restore from backup">⬆ Restore</button>
+        <input type="file" id="restore-input" accept=".json" style="display:none" onchange="importHistory(event)">
+        <button class="btn-history-action" onclick="clearHistory()" title="Clear all saved history" style="color:var(--accent);border-color:rgba(220,74,29,0.3)">✕ Clear</button>
+      </div>
+      <button class="btn-dark-mode" id="dark-mode-btn" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
       <button class="btn-upload-new" onclick="resetApp()">↑ New Statement</button>
       <button class="btn-pdf" onclick="exportPDF()">
         <span>↓</span> Download PDF
@@ -1708,6 +1850,8 @@
     <div class="section-header">
       <h2 class="section-title">Statement Overview</h2>
     </div>
+    <div id="insights-panel" class="insights-panel" style="display:none"></div>
+
     <div id="statement-identity" style="display:none;background:var(--ink);border-radius:var(--radius-lg);padding:24px 32px;margin-bottom:28px;align-items:center;gap:40px;flex-wrap:wrap;box-shadow:var(--shadow-md)">
       <div>
         <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin-bottom:8px">Cardholder</div>
@@ -1732,22 +1876,25 @@
         <div class="stat-label">Total Spend <span class="tip" data-tip="Sum of all debit (purchase) transactions in this statement period.">?</span></div>
         <div class="stat-value" id="stat-total">₹0</div>
         <div class="stat-sub" id="stat-txn-count">0 transactions</div>
+        <div id="stat-total-delta"></div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Largest Transaction <span class="tip" data-tip="The single highest-value debit transaction this cycle.">?</span></div>
         <div class="stat-value" id="stat-largest">₹0</div>
         <div class="stat-sub" id="stat-largest-merchant">—</div>
+        <div id="stat-largest-delta"></div>
       </div>
-
       <div class="stat-card">
         <div class="stat-label">Total Payments <span class="tip" data-tip="Sum of all credit-type entries this cycle — card payments made, refunds, and reversals posted to your account.">?</span></div>
         <div class="stat-value" id="stat-payments">₹0</div>
         <div class="stat-sub" id="stat-payments-count">0 entries</div>
+        <div id="stat-payments-delta"></div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Total NeuCoins <span class="tip" data-tip="Your current NeuCoins balance with the bank as reported in this statement's Reward Points Summary. Also shown as a percentage of your total spend this cycle.">?</span></div>
         <div class="stat-value" id="stat-neucoins">—</div>
         <div class="stat-sub" id="stat-neucoins-pct">—</div>
+        <div id="stat-neucoins-delta"></div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Top Category <span class="tip" data-tip="The spending category where you spent the most this cycle.">?</span></div>
@@ -1758,6 +1905,7 @@
         <div class="stat-label">Reward Rate <span class="tip" data-tip="NeuCoins earned per ₹100 spent. Formula: (NeuCoins with Bank ÷ Total Spend) × 100. Higher is better.">?</span></div>
         <div class="stat-value" id="stat-reward-rate">—</div>
         <div class="stat-sub" id="stat-reward-rate-sub">NeuCoins per ₹100</div>
+        <div id="stat-reward-rate-delta"></div>
       </div>
     </div>
 
@@ -1843,6 +1991,29 @@
       </div>
     </div>
 
+    <!-- NEUCOINS CAP TRACKER -->
+    <div class="cap-tracker-card" id="cap-tracker" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--ink)">✦ NeuCoins Cap Tracker <span class="tip" data-tip="TataNeu Infinity caps NeuCoins in certain categories. UPI: 500/mo. Grocery, Utility, Telecom, Insurance: 2,000/mo each.">?</span></div>
+        <div style="font-size:11px;color:var(--ink-muted);font-family:var(--font-mono)">Based on Base NeuCoins* in statement</div>
+      </div>
+      <div id="cap-rows"></div>
+    </div>
+
+    <!-- FUEL SURCHARGE TRACKER -->
+    <div class="fuel-tracker-card" id="fuel-tracker" style="display:none">
+      <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:12px">⛽ Fuel Surcharge Savings <span class="tip" data-tip="1% surcharge waiver on fuel transactions between ₹400–₹5,000. Max ₹500/cycle.">?</span></div>
+      <div id="fuel-rows"></div>
+    </div>
+
+    <!-- RECURRING SPENDS -->
+    <div class="widget-card" id="recurring-card" style="display:none;margin-bottom:28px">
+      <div class="widget-header">
+        <div class="widget-title">🔁 Recurring Spends <span class="tip" data-tip="Merchants appearing in 2 or more of your saved months — likely your fixed monthly costs.">?</span></div>
+      </div>
+      <div id="recurring-list"></div>
+    </div>
+
     <!-- REWARDS SUMMARY -->
     <div class="rewards-card" id="rewards-card" style="display:none">
       <div class="rewards-header">
@@ -1853,6 +2024,16 @@
         <span id="rewards-total-badge" class="badge badge-rewards"></span>
       </div>
       <div id="rewards-program-table"></div>
+    </div>
+
+    <!-- 6-MONTH TREND CHART -->
+    <div id="trend-section" style="display:none;margin-bottom:28px">
+      <div class="section-header" style="margin-top:32px"><h2 class="section-title">6-Month Trends</h2></div>
+      <div class="chart-card full">
+        <div class="chart-title">Category Spend Across Months</div>
+        <div class="chart-subtitle">Top categories across your saved statement history</div>
+        <canvas id="chart-trend" height="160"></canvas>
+      </div>
     </div>
 
     <div class="section-header" style="margin-top:32px"><h2 class="section-title">All Transactions</h2></div>
@@ -2081,6 +2262,38 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
+// CDN ERROR HANDLING
+// ═══════════════════════════════════════════════════════════════
+function handleCDNError(library) {
+  console.error(`Failed to load ${library} from CDN`);
+  if (typeof showToast === 'function') {
+    showToast(`⚠️ ${library} failed to load - some features may not work`);
+  } else {
+    alert(`⚠️ ${library} failed to load - some features may not work`);
+  }
+}
+
+// Check if critical libraries loaded
+function checkLibraries() {
+  const missing = [];
+  if (typeof XLSX === 'undefined') missing.push('XLSX');
+  if (typeof Chart === 'undefined') missing.push('Chart.js');
+  if (typeof window.jspdf === 'undefined') missing.push('jsPDF');
+  if (typeof html2canvas === 'undefined') missing.push('html2canvas');
+  
+  if (missing.length > 0) {
+    const msg = `Libraries missing: ${missing.join(', ')} - Please refresh page`;
+    if (typeof showToast === 'function') {
+      showToast(msg);
+    } else {
+      console.warn(msg);
+    }
+    return false;
+  }
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
 let allTransactions = [];
@@ -2092,6 +2305,148 @@ let compStatements = [null, null, null];
 let activeCompSlot = -1;
 let rewardsConfirmed = false;
 let cardChatOpen = false;
+let activeStatementKey = null;
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORY STORAGE
+// ═══════════════════════════════════════════════════════════════
+const HISTORY_KEY = 'cc_analyser_history';
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}'); } catch { return {}; }
+}
+
+function saveHistory(history) {
+  try {
+    const json = JSON.stringify(history);
+    // Warn if approaching 4MB
+    if (json.length > 4 * 1024 * 1024) {
+      showToast('⚠️ Storage nearly full — consider clearing old statements');
+    }
+    localStorage.setItem(HISTORY_KEY, json);
+  } catch (e) {
+    showToast('⚠️ Storage full — clear some old statements first');
+  }
+}
+
+function getStatementKey(meta, txns) {
+  // Prefer statement date from meta, fall back to first transaction date
+  if (meta && meta.statementDate) {
+    // Extract Mon YYYY from whatever format the date is in
+    const m = String(meta.statementDate).match(/([A-Za-z]{3,})\s*(\d{4})/);
+    if (m) return m[1].slice(0,3) + ' ' + m[2];
+  }
+  if (txns && txns.length) {
+    const first = txns[0].date || '';
+    const m = first.match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+    if (m) return m[2] + ' ' + m[3];
+  }
+  return 'Unknown';
+}
+
+function saveCurrentStatement(txns, meta, key) {
+  const history = getHistory();
+  history[key] = {
+    key,
+    savedAt: new Date().toISOString(),
+    meta: { ...meta },
+    transactions: txns.map(t => ({ ...t }))
+  };
+  saveHistory(history);
+  refreshHistoryDropdown(key);
+}
+
+function refreshHistoryDropdown(activeKey) {
+  const history = getHistory();
+  const keys = Object.keys(history).sort((a, b) => {
+    const MMAP = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const parse = k => { const p = k.match(/([A-Za-z]{3})\s+(\d{4})/); return p ? new Date(parseInt(p[2]), MMAP[p[1]] ?? 0) : new Date(0); };
+    return parse(b) - parse(a); // newest first
+  });
+
+  const wrap = document.getElementById('history-wrap');
+  const sel = document.getElementById('history-select');
+  if (!keys.length) { wrap.style.display = 'none'; return; }
+
+  wrap.style.display = 'flex';
+  sel.innerHTML = keys.map(k =>
+    `<option value="${k}" ${k === activeKey ? 'selected' : ''}>${k}</option>`
+  ).join('');
+}
+
+function switchStatement(key) {
+  const history = getHistory();
+  const entry = history[key];
+  if (!entry) return;
+  activeStatementKey = key;
+  allTransactions = entry.transactions;
+  filteredTransactions = [...entry.transactions];
+  initApp(entry.transactions, entry.meta, false); // false = don't re-save
+  refreshHistoryDropdown(key);
+}
+
+function exportHistory() {
+  const history = getHistory();
+  if (!Object.keys(history).length) { showToast('No history to backup'); return; }
+  const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'StatementSense-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  showToast('Backup downloaded ✓');
+}
+
+function importHistory(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      // Validate it looks like our history format
+      const keys = Object.keys(data);
+      if (!keys.length || !data[keys[0]].transactions) throw new Error('Invalid format');
+      saveHistory(data);
+      // Load the most recent statement
+      const sorted = keys.sort((a, b) => {
+        const MMAP = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+        const parse = k => { const p = k.match(/([A-Za-z]{3})\s+(\d{4})/); return p ? new Date(parseInt(p[2]), MMAP[p[1]] ?? 0) : new Date(0); };
+        return parse(b) - parse(a);
+      });
+      switchStatement(sorted[0]);
+      showToast('Restored ' + keys.length + ' statement(s) ✓');
+    } catch { showToast('⚠️ Invalid backup file'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearHistory() {
+  if (!confirm('Clear all saved statement history? This cannot be undone.')) return;
+  localStorage.removeItem(HISTORY_KEY);
+  document.getElementById('history-wrap').style.display = 'none';
+  showToast('History cleared');
+}
+
+// ─── Auto-restore on page load ───────────────────────────────────────────────
+(function autoRestore() {
+  const history = getHistory();
+  const keys = Object.keys(history);
+  if (!keys.length) return;
+  // Sort newest first
+  const MMAP = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const parse = k => { const p = k.match(/([A-Za-z]{3})\s+(\d{4})/); return p ? new Date(parseInt(p[2]), MMAP[p[1]] ?? 0) : new Date(0); };
+  const latest = keys.sort((a,b) => parse(b) - parse(a))[0];
+  const entry = history[latest];
+  activeStatementKey = latest;
+  allTransactions = entry.transactions;
+  filteredTransactions = [...entry.transactions];
+  // Defer until DOM + libraries ready
+  window.addEventListener('load', () => {
+    initApp(entry.transactions, entry.meta, false);
+    refreshHistoryDropdown(latest);
+  });
+})();
 
 const SEED_MERCHANT_MAP = [
   { raw: "TURFTOWNTECHNOLOGI Delhi", label: "TURF TOWN", category: "Entertainment", source: "seed" },
@@ -2218,6 +2573,7 @@ function addRemapping(raw, label, category) {
 // FILE PARSING
 // ═══════════════════════════════════════════════════════════════
 document.getElementById('file-input').addEventListener('change', e => {
+  if (!checkLibraries()) return;
   if (e.target.files[0]) loadFile(e.target.files[0], 'main');
 });
 
@@ -2227,12 +2583,18 @@ dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-ove
 dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
+  if (!checkLibraries()) return;
   if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0], 'main');
 });
 
 function loadFile(file, target) {
+  if (!checkLibraries()) return;
+  
   const processWorkbook = (workbook) => {
     try {
+      if (typeof XLSX === 'undefined') {
+        throw new Error('XLSX library not available');
+      }
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
       console.log('[StatementSense] First 8 rows:', rows.slice(0, 8));
@@ -2246,7 +2608,7 @@ function loadFile(file, target) {
       if (target === 'main') {
         allTransactions = txns;
         filteredTransactions = [...txns];
-        initApp(txns, meta);
+        initApp(txns, meta, true); // persist = true for fresh uploads
       } else {
         const idx = parseInt(target);
         compStatements[idx] = { filename: file.name, transactions: txns };
@@ -2262,6 +2624,9 @@ function loadFile(file, target) {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
+      if (typeof XLSX === 'undefined') {
+        throw new Error('XLSX library not available - please refresh the page');
+      }
       processWorkbook(XLSX.read(e.target.result, { type: 'array' }));
     } catch(err) {
       console.error('[StatementSense] XLSX read error:', err);
@@ -2625,7 +2990,7 @@ function redactCard(card) {
 // ═══════════════════════════════════════════════════════════════
 // INIT APP
 // ═══════════════════════════════════════════════════════════════
-function initApp(txns, meta) {
+function initApp(txns, meta, persist = true) {
   window._lastMeta = meta;
   meta = meta || {};
   document.getElementById('landing').style.display = 'none';
@@ -2634,6 +2999,13 @@ function initApp(txns, meta) {
   const chatToggle = document.getElementById('card-chat-toggle');
   if (chatToggle) chatToggle.style.display = 'flex';
 
+  // Save to history on first load (not when switching between saved statements)
+  if (persist) {
+    const key = getStatementKey(meta, txns);
+    activeStatementKey = key;
+    saveCurrentStatement(txns, meta, key);
+  }
+
   populateStats(txns, meta);
   populateCatFilter(txns);
   renderCharts(txns);
@@ -2641,6 +3013,11 @@ function initApp(txns, meta) {
   renderUPI(txns);
   renderAnomalies(txns);
   renderRewards(txns, meta);
+  renderCapTracker(txns);
+  renderFuelTracker(txns);
+  renderInsights(txns, meta);
+  renderRecurring(txns);
+  renderTrendChart();
   renderFooterLog();
   updateFooterCount();
 
@@ -2661,6 +3038,34 @@ function initApp(txns, meta) {
   document.getElementById('identity-name').textContent = meta.name ? redactName(meta.name) : 'HDFC Cardholder';
   document.getElementById('identity-card').textContent = meta.card ? redactCard(meta.card) : 'TataNeu Infinity ••••';
   document.getElementById('topbar-card-info').textContent = meta.card ? 'HDFC ' + redactCard(meta.card) : 'HDFC TataNeu ••••';
+}
+
+// ─── Delta helper ────────────────────────────────────────────────────────────
+function getPrevStatement() {
+  const history = getHistory();
+  const keys = Object.keys(history);
+  if (keys.length < 2) return null;
+  const MMAP = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const parse = k => { const p = k.match(/([A-Za-z]{3})\s+(\d{4})/); return p ? new Date(parseInt(p[2]), MMAP[p[1]] ?? 0) : new Date(0); };
+  const sorted = keys.sort((a,b) => parse(b) - parse(a));
+  const currentIdx = sorted.indexOf(activeStatementKey);
+  if (currentIdx < 0 || currentIdx === sorted.length - 1) return null;
+  return history[sorted[currentIdx + 1]];
+}
+
+function renderDelta(elementId, current, prev, lowerIsBetter = true) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  if (prev === null || prev === undefined || prev === 0) { el.innerHTML = ''; return; }
+  const diff = current - prev;
+  const pct = Math.round(Math.abs(diff) / prev * 100);
+  if (diff === 0) { el.innerHTML = `<span class="stat-delta neutral">— same as last month</span>`; return; }
+  const up = diff > 0;
+  const bad = lowerIsBetter ? up : !up;
+  const arrow = up ? '↑' : '↓';
+  const cls = bad ? 'up' : 'down';
+  const label = up ? `+${fmt(Math.abs(diff))} (${pct}%) vs last month` : `−${fmt(Math.abs(diff))} (${pct}%) vs last month`;
+  el.innerHTML = `<span class="stat-delta ${cls}">${arrow} ${label}</span>`;
 }
 
 function populateStats(txns, meta) {
@@ -2706,6 +3111,27 @@ function populateStats(txns, meta) {
   if (topCat) {
     document.getElementById('stat-top-cat').textContent = (CATEGORIES[topCat[0]]?.icon || '') + ' ' + topCat[0];
     document.getElementById('stat-top-cat-amt').textContent = fmt(topCat[1]);
+  }
+
+  // ── Month-over-month deltas ──────────────────────────────────────────────
+  const prev = getPrevStatement();
+  if (prev) {
+    const prevDebits = prev.transactions.filter(t => t.type === 'debit');
+    const prevTotal = prevDebits.reduce((s,t) => s + t.amount, 0);
+    const prevLargest = [...prevDebits].sort((a,b) => b.amount - a.amount)[0];
+    const prevCredits = prev.transactions.filter(t => t.type === 'credit');
+    const prevPayments = prevCredits.reduce((s,t) => s + t.amount, 0);
+    const prevNc = prev.meta && prev.meta.neuCoinsWithBank ? prev.meta.neuCoinsWithBank : 0;
+    const prevRate = (prevNc > 0 && prevTotal > 0) ? (prevNc / prevTotal * 100) : 0;
+
+    renderDelta('stat-total-delta', total, prevTotal, true);
+    renderDelta('stat-largest-delta', largest ? largest.amount : 0, prevLargest ? prevLargest.amount : 0, true);
+    renderDelta('stat-payments-delta', paymentTotal, prevPayments, false);
+    renderDelta('stat-neucoins-delta', nc, prevNc, false);
+    renderDelta('stat-reward-rate-delta', rewardRate || 0, prevRate, false);
+  } else {
+    ['stat-total-delta','stat-largest-delta','stat-payments-delta','stat-neucoins-delta','stat-reward-rate-delta']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
   }
 }
 
@@ -3170,7 +3596,7 @@ function renderTable(txns) {
       </td>
       <td class="td-amount td-${t.type}">${t.type === 'debit' ? '−' : '+'}${fmt(t.amount)}</td>
       <td class="td-neucoins">${t.neuCoins > 0 ? '<span class="neucoins-badge">+' + t.neuCoins + '</span>' : '<span style="color:var(--ink-muted);font-size:11px">—</span>'}</td>
-      <td>${t.isUPI ? '<span title="UPI transaction" class="flag-icon">📱</span>' : ''}${t.isReward ? '<span title="Reward/Cashback" class="flag-icon">✦</span>' : ''}</td>
+      <td>${t.isUPI ? '<span title="UPI transaction" class="flag-icon">📱</span>' : ''}${t.isReward ? '<span title="Reward/Cashback" class="flag-icon">✦</span>' : ''}${isZeroNeu(t) ? '<span class="zero-neu-flag" title="Zero NeuCoins — this transaction should have earned but shows 0. Worth checking.">⚪</span>' : ''}</td>
     `;
     body.appendChild(tr);
   });
@@ -3673,6 +4099,292 @@ function ddRenderCell(t, field) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ZERO NEUCOINS FLAG
+// ═══════════════════════════════════════════════════════════════
+const NEUCOINS_EXCLUDED_CATS = new Set(['Fuel', 'Finance', 'Rewards']);
+
+function isZeroNeu(t) {
+  if (t.type !== 'debit') return false;
+  if (t.neuCoins > 0) return false;
+  if (NEUCOINS_EXCLUDED_CATS.has(t.category)) return false;
+  // Skip if looks like a payment/wallet/rent
+  const raw = (t.raw || '').toLowerCase();
+  if (/payment|wallet|rent|government|emi|dial.*emi|smart.*emi|cash adv/i.test(raw)) return false;
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NEUCOINS CAP TRACKER
+// ═══════════════════════════════════════════════════════════════
+function renderCapTracker(txns) {
+  const card = document.getElementById('cap-tracker');
+  const rowsEl = document.getElementById('cap-rows');
+  const debits = txns.filter(t => t.type === 'debit');
+
+  // UPI cap: 500/mo
+  const upiNeu = debits.filter(t => t.isUPI).reduce((s,t) => s + (t.neuCoins || 0), 0);
+  // Utility cap: 2000/mo
+  const utilNeu = debits.filter(t => t.category === 'Utilities').reduce((s,t) => s + (t.neuCoins || 0), 0);
+  // Telecom: recharge/broadband in Utilities
+  const telecomNeu = debits.filter(t => {
+    const r = (t.raw||'').toLowerCase();
+    return /jio|airtel|bsnl|vodafone|vi |recharge|postpaid|prepaid|broadband|tata play/i.test(r);
+  }).reduce((s,t) => s + (t.neuCoins || 0), 0);
+
+  const caps = [
+    { label: 'UPI', earned: Math.round(upiNeu), cap: 500 },
+    { label: 'Utilities', earned: Math.round(utilNeu), cap: 2000 },
+    { label: 'Telecom & Cable', earned: Math.round(telecomNeu), cap: 2000 },
+  ];
+
+  const hasAny = caps.some(c => c.earned > 0);
+  if (!hasAny) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  rowsEl.innerHTML = caps.map(c => {
+    const pct = Math.min(100, Math.round(c.earned / c.cap * 100));
+    const cls = pct >= 100 ? 'full' : pct >= 75 ? 'warn' : 'ok';
+    const status = pct >= 100 ? '🔴 Capped' : pct >= 75 ? '🟡 Nearly capped' : '🟢 Under cap';
+    return `<div class="cap-row">
+      <div class="cap-label">${c.label}</div>
+      <div class="cap-bar-wrap"><div class="cap-bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="cap-meta">${c.earned.toLocaleString('en-IN')} / ${c.cap.toLocaleString('en-IN')} · ${status}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FUEL SURCHARGE TRACKER
+// ═══════════════════════════════════════════════════════════════
+function renderFuelTracker(txns) {
+  const card = document.getElementById('fuel-tracker');
+  const rowsEl = document.getElementById('fuel-rows');
+  const fuelTxns = txns.filter(t => t.type === 'debit' && t.category === 'Fuel');
+  if (!fuelTxns.length) { card.style.display = 'none'; return; }
+
+  // Eligible: ₹400–₹5000
+  const eligible = fuelTxns.filter(t => t.amount >= 400 && t.amount <= 5000);
+  const totalEligible = eligible.reduce((s,t) => s + t.amount, 0);
+  const waiverEarned = Math.min(500, Math.round(totalEligible * 0.01));
+  const totalFuelSpend = fuelTxns.reduce((s,t) => s + t.amount, 0);
+
+  card.style.display = 'block';
+  rowsEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
+      <div style="background:var(--surface-2);border-radius:10px;padding:12px 16px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:22px;color:var(--ink)">${fmt(totalFuelSpend)}</div>
+        <div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase">Total Fuel Spend</div>
+      </div>
+      <div style="background:var(--surface-2);border-radius:10px;padding:12px 16px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:22px;color:var(--green)">${fmt(waiverEarned)}</div>
+        <div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase">Surcharge Saved This Cycle</div>
+      </div>
+      <div style="background:var(--surface-2);border-radius:10px;padding:12px 16px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:22px;color:var(--ink)">${eligible.length} / ${fuelTxns.length}</div>
+        <div style="font-size:10px;color:var(--ink-muted);font-family:var(--font-mono);text-transform:uppercase">Eligible Transactions</div>
+      </div>
+    </div>
+    ${waiverEarned >= 500 ? '<div style="padding:8px 12px;background:var(--amber-soft);border-radius:8px;font-size:12px;color:var(--amber);margin-bottom:12px">⚠️ Monthly waiver cap of ₹500 reached — further fuel surcharges are not waived this cycle.</div>' : ''}
+    <div style="font-size:11px;color:var(--ink-muted);margin-top:4px">Waiver applies on transactions ₹400–₹5,000. Fuel transactions do not earn NeuCoins.</div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SMART INSIGHTS
+// ═══════════════════════════════════════════════════════════════
+function renderInsights(txns, meta) {
+  const panel = document.getElementById('insights-panel');
+  const debits = txns.filter(t => t.type === 'debit');
+  if (!debits.length) { panel.style.display = 'none'; return; }
+
+  const total = debits.reduce((s,t) => s + t.amount, 0);
+  const nc = (meta && meta.neuCoinsWithBank) ? meta.neuCoinsWithBank : 0;
+  const prev = getPrevStatement();
+  const chips = [];
+
+  // Insight 1: total spend vs prev
+  if (prev) {
+    const prevDebits = prev.transactions.filter(t => t.type === 'debit');
+    const prevTotal = prevDebits.reduce((s,t) => s + t.amount, 0);
+    const diff = total - prevTotal;
+    const pct = prevTotal > 0 ? Math.abs(Math.round(diff / prevTotal * 100)) : 0;
+    if (Math.abs(diff) > 500) {
+      chips.push({ icon: diff > 0 ? '📈' : '📉', text: `You spent ${diff > 0 ? fmt(diff) + ' more' : fmt(Math.abs(diff)) + ' less'} than last month (${pct}% ${diff > 0 ? 'increase' : 'decrease'}).` });
+    }
+  }
+
+  // Insight 2: top category
+  const catTotals = {};
+  debits.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+  const topCat = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0];
+  if (topCat) {
+    const pct = Math.round(topCat[1] / total * 100);
+    chips.push({ icon: CATEGORIES[topCat[0]]?.icon || '📦', text: `${topCat[0]} was your biggest spend category at ${fmt(topCat[1])} — ${pct}% of total spend.` });
+  }
+
+  // Insight 3: zero NeuCoins flag count
+  const zeroNeuCount = debits.filter(isZeroNeu).length;
+  if (zeroNeuCount > 0) {
+    chips.push({ icon: '⚪', text: `${zeroNeuCount} transaction${zeroNeuCount > 1 ? 's' : ''} earned zero NeuCoins but may have been eligible. Look for the ⚪ flag in the table.` });
+  }
+
+  // Insight 4: UPI spend share
+  const upiTotal = debits.filter(t => t.isUPI).reduce((s,t) => s + t.amount, 0);
+  if (upiTotal > 0 && total > 0) {
+    const pct = Math.round(upiTotal / total * 100);
+    chips.push({ icon: '📱', text: `${pct}% of your spend (${fmt(upiTotal)}) was via UPI — NeuCoins on UPI are capped at 500/month.` });
+  }
+
+  // Insight 5: reward rate vs benchmark
+  if (nc > 0 && total > 0) {
+    const rate = (nc / total * 100).toFixed(2);
+    const benchmark = 1.5;
+    chips.push({ icon: '✦', text: `Your reward rate this cycle: ${rate} NeuCoins per ₹100. ${parseFloat(rate) >= benchmark ? 'That\'s at or above the base 1.5% rate.' : 'Below the base 1.5% rate — some spends may have been on excluded categories.'}` });
+  }
+
+  if (!chips.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'flex';
+  panel.innerHTML = chips.map(c =>
+    `<div class="insight-chip"><span class="ic-icon">${c.icon}</span><span>${c.text}</span></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RECURRING SPENDS
+// ═══════════════════════════════════════════════════════════════
+function renderRecurring(txns) {
+  const card = document.getElementById('recurring-card');
+  const listEl = document.getElementById('recurring-list');
+  const history = getHistory();
+  const historyKeys = Object.keys(history);
+  if (historyKeys.length < 2) { card.style.display = 'none'; return; }
+
+  // Build label → months map across all history
+  const labelMonths = {};
+  historyKeys.forEach(key => {
+    const entry = history[key];
+    const labels = new Set(entry.transactions.filter(t => t.type === 'debit').map(t => t.label));
+    labels.forEach(l => {
+      if (!labelMonths[l]) labelMonths[l] = new Set();
+      labelMonths[l].add(key);
+    });
+  });
+
+  // Also include current (may not be saved yet if switching)
+  const currentLabels = new Set(txns.filter(t => t.type === 'debit').map(t => t.label));
+  currentLabels.forEach(l => {
+    if (!labelMonths[l]) labelMonths[l] = new Set();
+    labelMonths[l].add(activeStatementKey || '_current');
+  });
+
+  // Keep only those appearing in 2+ months
+  const recurring = Object.entries(labelMonths)
+    .filter(([, months]) => months.size >= 2)
+    .map(([label, months]) => {
+      const amounts = [];
+      months.forEach(mk => {
+        const entry = mk === '_current' ? { transactions: txns } : history[mk];
+        if (!entry) return;
+        entry.transactions.filter(t => t.type === 'debit' && t.label === label)
+          .forEach(t => amounts.push(t.amount));
+      });
+      const avg = amounts.length ? Math.round(amounts.reduce((s,a) => s+a,0) / amounts.length) : 0;
+      return { label, months: months.size, avg };
+    })
+    .sort((a,b) => b.avg - a.avg)
+    .slice(0, 10);
+
+  if (!recurring.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  listEl.innerHTML = recurring.map(r =>
+    `<div class="recurring-item">
+      <div class="recurring-name">${r.label}</div>
+      <div class="recurring-meta">${r.months} months in a row</div>
+      <div class="recurring-avg">${fmt(r.avg)} avg</div>
+    </div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 6-MONTH TREND CHART
+// ═══════════════════════════════════════════════════════════════
+function renderTrendChart() {
+  const section = document.getElementById('trend-section');
+  const history = getHistory();
+  const MMAP = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const parse = k => { const p = k.match(/([A-Za-z]{3})\s+(\d{4})/); return p ? new Date(parseInt(p[2]), MMAP[p[1]] ?? 0) : new Date(0); };
+  const sortedKeys = Object.keys(history).sort((a,b) => parse(a) - parse(b)).slice(-6);
+
+  if (sortedKeys.length < 2) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  // Top 5 categories across all months
+  const catTotalsAll = {};
+  sortedKeys.forEach(key => {
+    history[key].transactions.filter(t => t.type === 'debit').forEach(t => {
+      catTotalsAll[t.category] = (catTotalsAll[t.category] || 0) + t.amount;
+    });
+  });
+  const topCats = Object.entries(catTotalsAll).sort((a,b) => b[1]-a[1]).slice(0,5).map(([k]) => k);
+
+  const datasets = topCats.map((cat, i) => ({
+    label: cat,
+    data: sortedKeys.map(key => {
+      const txns = history[key].transactions.filter(t => t.type === 'debit' && t.category === cat);
+      return Math.round(txns.reduce((s,t) => s + t.amount, 0));
+    }),
+    borderColor: CHART_PALETTE[i],
+    backgroundColor: CHART_PALETTE[i] + '22',
+    borderWidth: 2,
+    pointRadius: 4,
+    tension: 0.3,
+    fill: false,
+  }));
+
+  if (charts.trend) { charts.trend.destroy(); charts.trend = null; }
+  charts.trend = new Chart(document.getElementById('chart-trend'), {
+    type: 'line',
+    data: { labels: sortedKeys, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'Outfit', size: 11 }, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 10 } } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Mono', size: 10 }, callback: v => '₹'+Math.round(v/1000)+'k' } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DARK MODE
+// ═══════════════════════════════════════════════════════════════
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('dark-mode-btn').textContent = isDark ? '☀️' : '🌙';
+  try { localStorage.setItem('cc_dark_mode', isDark ? '1' : '0'); } catch {}
+}
+// Restore dark mode preference
+(function () {
+  try { if (localStorage.getItem('cc_dark_mode') === '1') { document.body.classList.add('dark'); document.getElementById('dark-mode-btn') && (document.getElementById('dark-mode-btn').textContent = '☀️'); } } catch {}
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUT
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    if (document.getElementById('landing').style.display !== 'none') {
+      document.getElementById('file-input').click();
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
 // FOOTER LOG
 // ═══════════════════════════════════════════════════════════════
 function toggleFooter() {
@@ -3998,53 +4710,30 @@ function resetApp() {
     chatPanel.classList.remove('visible');
     chatPanel.setAttribute('aria-hidden', 'true');
   }
+  // Keep history dropdown visible if there's saved data
+  refreshHistoryDropdown(activeStatementKey);
 }
 
 // Topbar card info (demo — actual name/card comes from file)
 document.getElementById('topbar-card-info').textContent = 'HDFC TataNeu ••••';
+
+// Show history bar on landing page if saved data exists
+(function initLandingHistoryBar() {
+  const history = getHistory();
+  const keys = Object.keys(history);
+  if (!keys.length) return;
+  const MMAP = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const parse = k => { const p = k.match(/([A-Za-z]{3})\s+(\d{4})/); return p ? new Date(parseInt(p[2]), MMAP[p[1]] ?? 0) : new Date(0); };
+  const sorted = keys.sort((a,b) => parse(b) - parse(a));
+  const sel = document.getElementById('landing-history-select');
+  const bar = document.getElementById('landing-history-bar');
+  if (!sel || !bar) return;
+  sel.innerHTML = '<option value="">Select a month…</option>' +
+    sorted.map(k => `<option value="${k}">${k}</option>`).join('');
+  bar.style.display = 'flex';
+  refreshHistoryDropdown(null);
+})();
 </script>
-
-<!-- ═══ PDF PREVIEW MODAL ═══ -->
-<div class="modal-overlay" id="pdf-preview-modal" onclick="if(event.target===this)closePDFPreview()" style="z-index:9998">
-  <div class="modal" style="max-width:700px;max-height:90vh">
-    <div class="modal-header">
-      <div class="modal-title">PDF Preview</div>
-      <button class="modal-close" onclick="closePDFPreview()">&#x2715;</button>
-    </div>
-    <div class="modal-body" style="padding:0;overflow:hidden">
-      <div style="padding:16px 20px;background:var(--surface-2);border-bottom:1px solid var(--border);font-size:12px;color:var(--ink-muted)">
-        Preview of your export. Confirm to download.
-      </div>
-      <div id="pdf-preview-pages" style="padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:55vh;background:#e8e8e8"></div>
-      <div style="padding:16px 20px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border)">
-        <button onclick="closePDFPreview()" style="padding:9px 20px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font-body);cursor:pointer;font-size:13px">Cancel</button>
-        <button onclick="confirmDownloadPDF()" style="padding:9px 22px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font-body);font-weight:600;cursor:pointer;font-size:13px">&#x2193; Download PDF</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ ADD CATEGORY MODAL ═══ -->
-<div class="modal-overlay" id="add-cat-modal" onclick="if(event.target===this)closeAddCatModal()" style="z-index:9999">
-  <div class="modal" style="max-width:400px">
-    <div class="modal-header">
-      <div class="modal-title">Manage Categories</div>
-      <button class="modal-close" onclick="closeAddCatModal()">&#x2715;</button>
-    </div>
-    <div class="modal-body" style="padding:20px">
-      <div style="margin-bottom:8px;font-size:13px;color:var(--ink-soft)">New category name:</div>
-      <div style="display:flex;gap:8px;margin-bottom:20px">
-        <input id="add-cat-input" class="search-input" type="text" placeholder="e.g. Subscriptions" style="flex:1;font-size:14px">
-        <button onclick="confirmAddCat()" style="padding:8px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:var(--font-body);font-weight:600;cursor:pointer;font-size:13px;white-space:nowrap">Add</button>
-      </div>
-      <div id="custom-cat-list"></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:16px">
-        <button onclick="closeAddCatModal()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:none;font-family:var(--font-body);cursor:pointer;font-size:13px">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 
 </body>
 </html>
